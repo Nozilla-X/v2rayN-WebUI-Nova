@@ -17,10 +17,10 @@ const setupKeyField = ref<InstanceType<typeof UiTextField> | null>(null)
 const setupConfirmKeyField = ref<InstanceType<typeof UiTextField> | null>(null)
 const loginSubmitting = ref(false)
 const setupSubmitPending = ref(false)
+let compositionEndedAt = 0
 
-// The session forms use `novalidate`: native constraint validation runs before
-// submit and can overwrite a silently autofilled Material shadow input. Values
-// are committed from the live controls here, then validated by useSession.
+// Sync before native validation, which can otherwise overwrite a silently
+// autofilled Material shadow input. The same sync runs again on submit.
 
 function syncLoginKey() {
   loginKeyField.value?.syncFromDom()
@@ -53,10 +53,20 @@ async function submitSetup() {
   }
 }
 
-function submitOnEnter(event: KeyboardEvent, submit: () => void) {
-  if (event.isComposing || event.target !== event.currentTarget) return
+function submitOnEnter(event: KeyboardEvent, sync: () => void, submit: () => void) {
+  // Safari reports isComposing=false for the Enter that confirms a composition;
+  // ignore it if compositionend was just dispatched.
+  if (event.isComposing || event.keyCode === 229 || performance.now() - compositionEndedAt < 50) return
+  if (event.target !== event.currentTarget) return
   event.preventDefault()
+  sync()
+  const form = (event.currentTarget as HTMLElement | null)?.closest('form')
+  if (form && !form.reportValidity()) return
   submit()
+}
+
+function onCompositionEnd() {
+  compositionEndedAt = performance.now()
 }
 </script>
 
@@ -94,8 +104,9 @@ function submitOnEnter(event: KeyboardEvent, submit: () => void) {
     <form
       v-else-if="session.setupRequired.value"
       class="session-card card card-elevated"
-      novalidate
+      @click.capture="syncSetupKeys"
       @submit.prevent="submitSetup"
+      @compositionend="onCompositionEnd"
     >
       <div class="session-brand">
         <img :src="logoSrc" alt="" />
@@ -121,7 +132,7 @@ function submitOnEnter(event: KeyboardEvent, submit: () => void) {
           maxlength="4096"
           reveal-password
           required
-          @keydown.enter="submitOnEnter($event, submitSetup)"
+          @keydown.enter="submitOnEnter($event, syncSetupKeys, submitSetup)"
         />
         <UiTextField
           ref="setupConfirmKeyField"
@@ -133,7 +144,7 @@ function submitOnEnter(event: KeyboardEvent, submit: () => void) {
           maxlength="4096"
           reveal-password
           required
-          @keydown.enter="submitOnEnter($event, submitSetup)"
+          @keydown.enter="submitOnEnter($event, syncSetupKeys, submitSetup)"
         />
         <p v-if="session.setupError.value" class="field-error" role="alert">{{ session.setupError.value }}</p>
       </div>
@@ -141,15 +152,15 @@ function submitOnEnter(event: KeyboardEvent, submit: () => void) {
         <UiButton
           type="submit"
           class="btn btn-filled btn-large"
-          :loading="session.setupSubmitting.value"
-          :disabled="session.setupSubmitting.value"
+          :loading="session.setupSubmitting.value || setupSubmitPending"
+          :disabled="session.setupSubmitting.value || setupSubmitPending"
         >
           {{ t('setup.submit') }}
         </UiButton>
       </div>
     </form>
 
-    <form v-else class="session-card card card-elevated" novalidate @submit.prevent="submitLogin">
+    <form v-else class="session-card card card-elevated" @click.capture="syncLoginKey" @submit.prevent="submitLogin" @compositionend="onCompositionEnd">
       <div class="session-brand">
         <img :src="logoSrc" alt="" />
         <h1>{{ t('auth.title') }}</h1>
@@ -173,15 +184,15 @@ function submitOnEnter(event: KeyboardEvent, submit: () => void) {
           :placeholder="t('auth.placeholder')"
           reveal-password
           required
-          @keydown.enter="submitOnEnter($event, submitLogin)"
+          @keydown.enter="submitOnEnter($event, syncLoginKey, submitLogin)"
         />
       </div>
       <div class="session-actions">
         <UiButton
           type="submit"
           class="btn btn-filled btn-large"
-          :loading="session.loading.value"
-          :disabled="session.loading.value"
+          :loading="session.loading.value || loginSubmitting"
+          :disabled="session.loading.value || loginSubmitting"
         >
           {{ t('auth.connect') }}
         </UiButton>
