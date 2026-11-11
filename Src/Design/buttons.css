@@ -1,0 +1,236 @@
+/* Material 3 buttons for native fallbacks and shared action chrome.
+ * Official <md-*-button> elements style themselves from the same tokens.
+ */
+
+:where(button, label).btn {
+  position: relative;
+  display: inline-flex;
+  min-height: var(--nova-control-height);
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: var(--nova-space-2);
+  padding: 0 var(--nova-space-6);
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: transparent;
+  color: var(--md-sys-color-primary);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  vertical-align: middle;
+  transition:
+    background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    transform var(--md-sys-motion-duration-short1) var(--md-sys-motion-easing-standard);
+}
+
+:where(button, label).btn::after,
+.icon-btn::after,
+.menu-item::after,
+.tab::after,
+.nav-item::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+:where(button, label).btn:hover:not(:disabled)::after,
+.icon-btn:hover:not(:disabled)::after,
+.menu-item:hover:not(:disabled)::after,
+.tab:hover:not(:disabled)::after,
+.nav-item:hover:not(:disabled)::after {
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+:where(button, label).btn:focus-visible::after,
+.icon-btn:focus-visible::after,
+.menu-item:focus-visible::after,
+.tab:focus-visible::after,
+.nav-item:focus-visible::after {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+
+:where(button, label).btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+:where(button, label).btn:active:not(:disabled)::after,
+.icon-btn:active:not(:disabled)::after,
+.menu-item:active:not(:disabled)::after,
+.tab:active:not(:disabled)::after,
+.nav-item:active:not(:disabled)::after {
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
+}
+
+:where(button, label).btn-filled {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+:where(button, label).btn-filled:hover:not(:disabled) {
+  box-shadow: var(--md-sys-elevation-level1);
+}
+
+:where(button, label).btn-tonal {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+:where(button, label).btn-tonal:hover:not(:disabled) {
+  box-shadow: var(--md-sys-elevation-level1);
+}
+
+:where(button, label).btn-outlined {
+  border-color: var(--md-sys-color-outline);
+  color: var(--md-sys-color-primary);
+}
+
+:where(button, label).btn-elevated {
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-primary);
+  box-shadow: var(--md-sys-elevation-level1);
+}
+
+:where(button, label).btn-text {
+  padding-inline: var(--nova-space-3);
+  color: var(--md-sys-color-primary);
+}
+
+:where(button, label).btn-danger {
+  background: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
+}
+
+:where(button, label).btn-danger-tonal {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+:where(button, label).btn-success-tonal {
+  background: var(--nova-color-success-container);
+  color: var(--nova-color-on-success-container);
+}
+
+:where(button, label).btn-small {
+  min-height: 36px;
+  padding-inline: var(--nova-space-4);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+}
+
+:where(button, label).btn-large {
+  min-height: 56px;
+  padding-inline: var(--nova-space-6);
+  font-size: var(--md-sys-typescale-title-medium-size);
+}
+
+:where(button, label).btn-square {
+  border-radius: var(--md-sys-shape-corner-medium);
+}
+
+:where(button, label).btn-block {
+  width: 100%;
+}
+
+:where(button, label).btn[aria-pressed="true"] {
+  border-color: var(--md-sys-color-primary);
+}
+
+:where(button, label).btn-filled[aria-pressed="true"],
+:where(button, label).btn-tonal[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+}
+
+:where(button, label).btn .ui-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- Icon button ---------- */
+
+.icon-btn {
+  position: relative;
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  transition:
+    background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    transform var(--md-sys-motion-duration-short1) var(--md-sys-motion-easing-standard);
+}
+
+.icon-btn:hover:not(:disabled) {
+  color: var(--md-sys-color-on-surface);
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.icon-btn[aria-pressed="true"],
+.icon-btn.is-active {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.icon-btn-filled {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.icon-btn-tonal {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.icon-btn-small {
+  width: 32px;
+  height: 32px;
+}
+
+.icon-btn .ui-icon {
+  width: var(--nova-icon-size);
+  height: var(--nova-icon-size);
+}
+
+@media (pointer: coarse) {
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Drop the press-scale transition; colour and shadow feedback stays. */
+  :where(button, label).btn,
+  .btn,
+  .icon-btn {
+    transition:
+      background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+      border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+      color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+      box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+}

@@ -1,0 +1,298 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--md-sys-color-background);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-background);
+  font-family: var(--md-sys-typescale-font-plain);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-wrap: break-word;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin-block: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 400;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--md-sys-typescale-headline-medium-size);
+  line-height: var(--md-sys-typescale-headline-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-medium-tracking);
+}
+
+h2 {
+  font-size: var(--md-sys-typescale-title-large-size);
+  line-height: var(--md-sys-typescale-title-large-line-height);
+  letter-spacing: var(--md-sys-typescale-title-large-tracking);
+}
+
+h3 {
+  font-size: var(--md-sys-typescale-title-medium-size);
+  font-weight: var(--md-sys-typescale-title-medium-weight);
+  line-height: var(--md-sys-typescale-title-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+}
+
+h4 {
+  font-size: var(--md-sys-typescale-title-small-size);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--md-sys-color-primary);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+label,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+fieldset:disabled {
+  cursor: not-allowed;
+  opacity: var(--nova-disabled-opacity);
+}
+
+input,
+select,
+textarea {
+  color: var(--md-sys-color-on-surface);
+}
+
+textarea {
+  field-sizing: content;
+}
+
+::placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.82;
+}
+
+::selection {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+:focus-visible {
+  outline: var(--nova-focus-ring);
+  outline-offset: var(--nova-focus-offset);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+img,
+svg {
+  flex: none;
+}
+
+img {
+  max-width: 100%;
+}
+
+hr {
+  height: 1px;
+  border: 0;
+  background: var(--nova-color-divider);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--md-sys-color-outline) 72%, transparent) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: color-mix(in srgb, var(--md-sys-color-outline) 76%, transparent);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-outline);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: var(--nova-z-skip);
+  top: calc(var(--nova-safe-top) + 8px);
+  left: -10000px;
+  min-height: var(--nova-control-height);
+  padding: var(--nova-space-2) var(--nova-space-4);
+  border: 1px solid var(--md-sys-color-primary);
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-primary);
+  font-size: var(--md-sys-typescale-label-large-size);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  left: calc(var(--nova-safe-left) + 16px);
+}
+
+.muted {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.danger-text {
+  color: var(--md-sys-color-error) !important;
+}
+
+.warning-text {
+  color: var(--nova-color-warning) !important;
+}
+
+.success-text {
+  color: var(--nova-color-success) !important;
+}
+
+.mono {
+  font-family: var(--md-sys-typescale-font-mono);
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-wrap {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.break-anywhere {
+  overflow-wrap: anywhere;
+}
+
+.stack {
+  display: grid;
+  gap: var(--nova-space-3);
+}
+
+/*
+ * Grid containers default to an implicit auto track, which is sized by the
+ * widest unbreakable child (long URLs, custom-element field internals). A
+ * zero-minimum track keeps every card and form inside its column; explicit
+ * multi-column templates in feature styles still win over this rule.
+ */
+:where(.card, .mobile-card, .more-section, .more-list, .list, .stack, .page-head-copy,
+  .section, .field, .field-row, .settings-card, .dns-card, .dns-stack, .updates-view,
+  .backup-view, .form-stack) {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--nova-space-2);
+}
+
+.row-wrap {
+  flex-wrap: wrap;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+}

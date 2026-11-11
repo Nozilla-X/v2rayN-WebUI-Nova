@@ -1,0 +1,410 @@
+/* Material 3 text fields, selection controls, chips and segmented buttons. */
+
+.field {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--nova-space-1);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line);
+}
+
+.field > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Official Material fields and chip sets size to their content by default. */
+.field :is(md-outlined-text-field, md-outlined-select, md-chip-set) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.field md-chip-set {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--nova-space-1) var(--nova-space-2);
+}
+
+.field md-chip-set > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.field > .field-label,
+.field > span:first-child {
+  display: block;
+  padding-inline: var(--nova-space-1);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  font-weight: var(--md-sys-typescale-weight-medium);
+}
+
+.field-input,
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.field select,
+.field textarea,
+.text-field input,
+.text-field select,
+.text-field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--nova-field-height);
+  padding: var(--nova-space-3) var(--nova-space-4);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small);
+  outline: none;
+  background: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
+  font-family: inherit;
+  font-size: var(--md-sys-typescale-body-large-size);
+  line-height: var(--md-sys-typescale-body-large-line);
+  transition:
+    border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.field textarea,
+.text-field textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+/* Toolbar filters sit next to control-height buttons on pointer layouts.
+   Touch layouts keep the roomier field height for comfortable tapping. */
+@media (min-width: 861px) {
+  .field.field-toolbar input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+    height: var(--nova-control-height);
+    min-height: var(--nova-control-height);
+    padding-block: 0;
+  }
+}
+
+.field-input:hover:not(:disabled),
+.field input:hover:not(:disabled),
+.field select:hover:not(:disabled),
+.field textarea:hover:not(:disabled) {
+  border-color: var(--md-sys-color-on-surface);
+}
+
+.field-input:focus,
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.text-field input:focus,
+.text-field select:focus,
+.text-field textarea:focus {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 0 0 1px var(--md-sys-color-primary);
+}
+
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--md-sys-color-error);
+  box-shadow: 0 0 0 1px var(--md-sys-color-error);
+}
+
+.field input[readonly],
+.field textarea[readonly] {
+  background: var(--md-sys-color-surface-container);
+}
+
+.field select {
+  appearance: none;
+  padding-right: var(--nova-space-9);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--md-sys-color-on-surface-variant) 50%),
+    linear-gradient(135deg, var(--md-sys-color-on-surface-variant) 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) calc(50% - 2px),
+    calc(100% - 14px) calc(50% - 2px);
+  background-repeat: no-repeat;
+  background-size: 6px 6px, 6px 6px;
+}
+
+.field select[multiple] {
+  min-height: 140px;
+  padding-right: var(--nova-space-4);
+  background-image: none;
+}
+
+.field select[multiple] option {
+  padding: var(--nova-space-2) var(--nova-space-3);
+  border-radius: var(--md-sys-shape-corner-small);
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: var(--md-sys-typescale-body-small-line);
+  overflow-wrap: anywhere;
+}
+
+.field-error {
+  color: var(--md-sys-color-error);
+  font-size: var(--md-sys-typescale-body-small-size);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--nova-space-4);
+  align-items: start;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.field-affix {
+  display: flex;
+  align-items: stretch;
+  gap: var(--nova-space-2);
+}
+
+.field-affix > .field,
+.field-affix > input,
+.field-affix > select {
+  flex: 1 1 auto;
+}
+
+.field-affix > .btn {
+  flex: 0 0 auto;
+  min-height: var(--nova-field-height);
+}
+
+.input-group {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--nova-space-2);
+}
+
+.input-group > .text-field,
+.input-group > .field {
+  flex: 1 1 auto;
+}
+
+.search-field {
+  display: flex;
+  width: min(360px, 100%);
+  min-height: var(--nova-field-height);
+  align-items: center;
+  gap: var(--nova-space-2);
+  padding: 0 var(--nova-space-3);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface-variant);
+  transition:
+    border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.search-field:focus-within {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 0 0 1px var(--md-sys-color-primary);
+}
+
+.search-field input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-body-medium-size);
+}
+
+.search-field .icon-btn {
+  width: 32px;
+  height: 32px;
+}
+
+/* ---------- Selection controls ---------- */
+
+.check {
+  display: inline-flex;
+  min-height: var(--nova-touch-target);
+  align-items: center;
+  gap: var(--nova-space-3);
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line);
+  cursor: pointer;
+  user-select: none;
+}
+
+.check input[type="checkbox"],
+input[type="checkbox"].check-input {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  margin: 0;
+  border: 2px solid var(--md-sys-color-on-surface-variant);
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: transparent;
+  color: var(--md-sys-color-on-primary);
+  cursor: pointer;
+  transition:
+    background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.check input[type="checkbox"]::after,
+input[type="checkbox"].check-input::after {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+  clip-path: polygon(14% 44%, 0 59%, 40% 100%, 100% 16%, 84% 3%, 39% 69%);
+  content: "";
+  opacity: 0;
+  transform: scale(0.7);
+  transition:
+    opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.check input[type="checkbox"]:checked,
+input[type="checkbox"].check-input:checked {
+  border-color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary);
+}
+
+.check input[type="checkbox"]:checked::after,
+input[type="checkbox"].check-input:checked::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.check input[type="checkbox"]:indeterminate,
+input[type="checkbox"].check-input:indeterminate {
+  border-color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary);
+}
+
+.check input[type="checkbox"]:indeterminate::after,
+input[type="checkbox"].check-input:indeterminate::after {
+  width: 10px;
+  height: 2px;
+  margin: 6px auto;
+  background: var(--md-sys-color-on-primary);
+  clip-path: none;
+  opacity: 1;
+  transform: none;
+}
+
+.check input[type="checkbox"]:focus-visible,
+input[type="checkbox"].check-input:focus-visible {
+  outline: var(--nova-focus-ring);
+  outline-offset: var(--nova-focus-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The check mark fades in without the springy scale. */
+  .check input[type="checkbox"]::after,
+  input[type="checkbox"].check-input::after {
+    transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+}
+
+.check input[type="checkbox"]:disabled {
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+.check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--nova-space-2) var(--nova-space-5);
+}
+
+/* ---------- Chips ---------- */
+
+.chip {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: var(--nova-space-1);
+  padding: 0 var(--nova-space-3);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-small);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-large-size);
+  line-height: var(--md-sys-typescale-label-large-line);
+  white-space: nowrap;
+  transition:
+    background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.chip:hover:not(:disabled) {
+  background: var(--nova-color-state-hover);
+}
+
+.chip[aria-pressed="true"],
+.chip.is-selected {
+  border-color: transparent;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: var(--md-sys-typescale-weight-medium);
+}
+
+.chip .count {
+  padding: 0 var(--nova-space-1);
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.72;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--nova-space-2);
+}
+
+/* ---------- Segmented buttons ---------- */
+
+.segmented {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 2px;
+  overflow: auto;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.segmented button {
+  min-height: 36px;
+  padding: 0 var(--nova-space-4);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  white-space: nowrap;
+}
+
+.segmented button:hover {
+  background: var(--nova-color-state-hover);
+  color: var(--md-sys-color-on-surface);
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: var(--md-sys-typescale-weight-semibold);
+}

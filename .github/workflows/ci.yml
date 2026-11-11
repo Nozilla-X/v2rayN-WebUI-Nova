@@ -1,0 +1,100 @@
+name: WebUI CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Stable release tag matching package.json and CHANGELOG.md (for example v2.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Validate release version and changelog
+        id: release
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name || github.ref_name }}
+        run: |
+          set -euo pipefail
+          node Scripts/release-notes.ts "$RELEASE_TAG" "$RUNNER_TEMP/release-notes.md"
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Check and package deployable artifact
+        run: |
+          set -euo pipefail
+          test -s dist/index.html
+          test -d dist/assets
+          test -n "$(find dist/assets -type f -print -quit)"
+          if grep -R -E 'https?://(localhost|127[.]0[.]0[.]1)(:5080)?' dist; then
+            echo 'Production output must not embed a local API origin.' >&2
+            exit 1
+          fi
+          if find dist -type f | grep -E '(^|/)(node_modules|\.git|\.npm-cache|Tests|Src)(/|$)|(^|/)\.env([./]|$)|\.(map|vue|ts|tsx|jsx|scss|sass)$'; then
+            echo 'Production output contains non-deployable files.' >&2
+            exit 1
+          fi
+          (cd dist && zip -qr ../v2rayN-WebUI-Nova.zip .)
+          unzip -Z1 v2rayN-WebUI-Nova.zip | grep -Fxq index.html
+          unzip -Z1 v2rayN-WebUI-Nova.zip | grep -Eq '^assets/.+'
+          if unzip -Z1 v2rayN-WebUI-Nova.zip | grep -Eq '^(dist|v2rayN-WebUI(-Nova)?)/'; then
+            echo 'The WebUI ZIP must not have an enclosing directory.' >&2
+            exit 1
+          fi
+      - run: git diff --check
+      - uses: actions/upload-artifact@v7
+        with:
+          name: v2rayN-WebUI-Nova
+          path: v2rayN-WebUI-Nova.zip
+
+  attach-release:
+    if: needs.verify.outputs.release_tag != ''
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v7
+        with:
+          name: v2rayN-WebUI-Nova
+      - name: Publish verified WebUI archive with changelog notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.verify.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          node Scripts/release-notes.ts "$RELEASE_TAG" "$RUNNER_TEMP/release-notes.md"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" v2rayN-WebUI-Nova.zip LICENSE --clobber
+            gh release edit "$RELEASE_TAG" --notes-file "$RUNNER_TEMP/release-notes.md" --draft=false --prerelease=false --latest
+          else
+            gh release create "$RELEASE_TAG" v2rayN-WebUI-Nova.zip LICENSE \
+              --target "$GITHUB_SHA" --title "$RELEASE_TAG" \
+              --notes-file "$RUNNER_TEMP/release-notes.md" --latest
+          fi

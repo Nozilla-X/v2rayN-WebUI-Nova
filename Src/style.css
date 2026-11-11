@@ -1,0 +1,135 @@
+@import "./Design/tokens.css";
+@import "./Design/base.css";
+@import "./Design/components.css";
+@import "./Design/shell.css";
+@import "./Design/motion.css";
+
+/* Route and session transitions shared across lazy page boundaries. */
+.route-fade-enter-active {
+  transition:
+    opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate),
+    transform var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+.route-fade-leave-active {
+  transition:
+    opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard-accelerate),
+    transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard-accelerate);
+}
+
+.route-fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px) scale(0.996);
+}
+
+.route-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.998);
+}
+
+body.nova-dialog-open {
+  overflow: hidden;
+}
+
+.session-screen {
+  position: relative;
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding:
+    max(var(--nova-space-5), var(--nova-safe-top))
+    max(var(--nova-space-5), var(--nova-safe-right))
+    max(var(--nova-space-5), var(--nova-safe-bottom))
+    max(var(--nova-space-5), var(--nova-safe-left));
+  background:
+    radial-gradient(1100px 560px at 50% -18%, color-mix(in srgb, var(--md-sys-color-primary) 9%, transparent), transparent 72%),
+    var(--md-sys-color-surface);
+}
+
+.session-card {
+  width: min(520px, 100%);
+  padding: clamp(var(--nova-space-5), 4vw, var(--nova-space-7));
+}
+
+.session-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--nova-space-3);
+  margin-bottom: var(--nova-space-6);
+}
+
+.session-brand img {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--md-sys-shape-corner-large);
+  box-shadow: var(--md-sys-elevation-level2);
+}
+
+.session-brand h1 {
+  margin: 0;
+  font-size: var(--md-sys-typescale-headline-small-size);
+  line-height: var(--md-sys-typescale-headline-small-line);
+}
+
+.session-brand p {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+}
+
+.session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--nova-space-2);
+  justify-content: flex-end;
+  margin-top: var(--nova-space-6);
+}
+
+.session-actions .btn {
+  width: 100%;
+}
+
+.splash-screen {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.splash-mark {
+  display: grid;
+  justify-items: center;
+  gap: var(--nova-space-3);
+}
+
+.splash-mark img {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--md-sys-shape-corner-large);
+  animation: splash-pulse 1.8s var(--md-sys-motion-easing-standard) infinite;
+}
+
+@keyframes splash-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.88; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Routes cross-fade in place; the splash mark stays still. */
+  .route-fade-enter-active {
+    transition: opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate);
+  }
+
+  .route-fade-leave-active {
+    transition: opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard-accelerate);
+  }
+
+  .route-fade-enter-from,
+  .route-fade-leave-to {
+    transform: none;
+  }
+
+  .splash-mark img {
+    animation: none;
+  }
+}
