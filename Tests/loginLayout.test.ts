@@ -5,7 +5,7 @@ import test from 'node:test'
 test('API connection fields belong above the Management Key in the login card', async () => {
   const app = await readFile(new URL('../Src/Shell/SessionScreen.vue', import.meta.url), 'utf8')
   assert.doesNotMatch(app, /backend-wrap|backend-box/)
-  const loginForm = app.match(/<form[^>]*@submit\.prevent="actions\.loginToBackend"[^>]*>([\s\S]*?)<\/form>/)?.[1]
+  const loginForm = app.match(/<form[^>]*@submit\.prevent="submitLogin"[^>]*>([\s\S]*?)<\/form>/)?.[1]
   assert.ok(loginForm)
   assert.ok(loginForm.indexOf('<BackendAddressFields') < loginForm.indexOf('auth.token'))
   assert.ok(loginForm.indexOf('<BackendAddressFields') < loginForm.indexOf('managementKeyDraft'))
