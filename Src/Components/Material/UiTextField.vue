@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { readFieldValue, type FieldValueHost } from '../../UI/fieldValue'
 import UiIcon from './UiIcon.vue'
 
 type FieldType = 'text' | 'email' | 'password' | 'url' | 'number' | 'textarea'
@@ -51,23 +52,73 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
 const { t } = useI18n()
 const revealed = ref(false)
+const field = ref<FieldValueHost | null>(null)
 const actualType = computed(() => {
   if (props.type !== 'password') return props.type
   return revealed.value ? 'text' : 'password'
 })
 
-function onInput(event: Event) {
-  const raw = (event.target as HTMLElement & { value: string }).value
-  emit('update:modelValue', props.type === 'number' && raw !== '' ? Number(raw) : raw)
+function syncFromDom(): string {
+  const raw = readFieldValue(field.value)
+  // Keep the Material host state in sync as well. Autofill can update the
+  // shadow input without notifying the host, and the next validator or render
+  // pass would otherwise restore the empty host value over the filled control.
+  if (field.value && field.value.value !== raw) field.value.value = raw
+  // Focusing an optional field must not turn an absent value into an empty
+  // string; only a real value (or a field that had a value before) is emitted.
+  if (raw === '' && (props.modelValue === null || props.modelValue === undefined)) return raw
+  const next = props.type === 'number' && raw !== '' ? Number(raw) : raw
+  if (next !== props.modelValue) emit('update:modelValue', next)
+  return raw
+}
+
+function onInput() {
+  syncFromDom()
 }
 
 function toggleReveal() {
+  syncFromDom()
   revealed.value = !revealed.value
 }
+
+type MaterialFieldHost = FieldValueHost & { updateComplete?: Promise<unknown> }
+let detachNativeSync: (() => void) | undefined
+let unmounted = false
+
+async function attachNativeSync() {
+  await nextTick()
+  if (unmounted) return
+  const host = field.value as MaterialFieldHost | null
+  if (!host) return
+  await host.updateComplete
+  if (unmounted) return
+  const root = host.shadowRoot
+  if (!root) return
+  // The native blur/change handlers run before the host's own listeners and
+  // before Material's validator can overwrite a silently autofilled control.
+  // Capture them at the shadow root so the live value is committed first.
+  const sync = () => { syncFromDom() }
+  root.addEventListener('blur', sync, true)
+  root.addEventListener('change', sync, true)
+  detachNativeSync = () => {
+    root.removeEventListener('blur', sync, true)
+    root.removeEventListener('change', sync, true)
+  }
+}
+
+onMounted(() => { void attachNativeSync() })
+onBeforeUnmount(() => {
+  unmounted = true
+  detachNativeSync?.()
+  detachNativeSync = undefined
+})
+
+defineExpose({ syncFromDom })
 </script>
 
 <template>
   <md-outlined-text-field
+    ref="field"
     class="ui-text-field"
     :class="{ 'ui-text-field-mono': mono }"
     :label="label || undefined"
@@ -91,6 +142,9 @@ function toggleReveal() {
     :suffix-text="suffixText || undefined"
     spellcheck="false"
     @input="onInput"
+    @change="onInput"
+    @focusin="onInput"
+    @focusout="onInput"
   >
     <md-icon-button
       v-if="revealPassword && type === 'password'"

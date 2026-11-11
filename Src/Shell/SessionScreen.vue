@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import UiButton from '../Components/Material/UiButton.vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BackendAddressFields from '../Components/Material/BackendAddressFields.vue'
 import UiIcon from '../Components/Material/UiIcon.vue'
@@ -10,6 +11,53 @@ const { t } = useI18n()
 const logoSrc = './v2rayN.png'
 const app = useNovaApp()
 const { session, backend, state, actions } = app
+
+const loginKeyField = ref<InstanceType<typeof UiTextField> | null>(null)
+const setupKeyField = ref<InstanceType<typeof UiTextField> | null>(null)
+const setupConfirmKeyField = ref<InstanceType<typeof UiTextField> | null>(null)
+const loginSubmitting = ref(false)
+const setupSubmitPending = ref(false)
+
+// The session forms use `novalidate`: native constraint validation runs before
+// submit and can overwrite a silently autofilled Material shadow input. Values
+// are committed from the live controls here, then validated by useSession.
+
+function syncLoginKey() {
+  loginKeyField.value?.syncFromDom()
+}
+
+async function submitLogin() {
+  if (loginSubmitting.value || session.loading.value) return
+  loginSubmitting.value = true
+  syncLoginKey()
+  try {
+    await actions.loginToBackend()
+  } finally {
+    loginSubmitting.value = false
+  }
+}
+
+function syncSetupKeys() {
+  setupKeyField.value?.syncFromDom()
+  setupConfirmKeyField.value?.syncFromDom()
+}
+
+async function submitSetup() {
+  if (setupSubmitPending.value || session.setupSubmitting.value) return
+  setupSubmitPending.value = true
+  syncSetupKeys()
+  try {
+    await actions.configureAndRemember()
+  } finally {
+    setupSubmitPending.value = false
+  }
+}
+
+function submitOnEnter(event: KeyboardEvent, submit: () => void) {
+  if (event.isComposing || event.target !== event.currentTarget) return
+  event.preventDefault()
+  submit()
+}
 </script>
 
 <template>
@@ -46,7 +94,8 @@ const { session, backend, state, actions } = app
     <form
       v-else-if="session.setupRequired.value"
       class="session-card card card-elevated"
-      @submit.prevent="actions.configureAndRemember"
+      novalidate
+      @submit.prevent="submitSetup"
     >
       <div class="session-brand">
         <img :src="logoSrc" alt="" />
@@ -63,6 +112,7 @@ const { session, backend, state, actions } = app
           @forget="backend.forget"
         />
         <UiTextField
+          ref="setupKeyField"
           v-model="session.setupKey.value"
           :label="t('setup.managementKey')"
           type="password"
@@ -71,8 +121,10 @@ const { session, backend, state, actions } = app
           maxlength="4096"
           reveal-password
           required
+          @keydown.enter="submitOnEnter($event, submitSetup)"
         />
         <UiTextField
+          ref="setupConfirmKeyField"
           v-model="session.setupConfirmKey.value"
           :label="t('setup.confirmKey')"
           type="password"
@@ -81,6 +133,7 @@ const { session, backend, state, actions } = app
           maxlength="4096"
           reveal-password
           required
+          @keydown.enter="submitOnEnter($event, submitSetup)"
         />
         <p v-if="session.setupError.value" class="field-error" role="alert">{{ session.setupError.value }}</p>
       </div>
@@ -96,7 +149,7 @@ const { session, backend, state, actions } = app
       </div>
     </form>
 
-    <form v-else class="session-card card card-elevated" @submit.prevent="actions.loginToBackend">
+    <form v-else class="session-card card card-elevated" novalidate @submit.prevent="submitLogin">
       <div class="session-brand">
         <img :src="logoSrc" alt="" />
         <h1>{{ t('auth.title') }}</h1>
@@ -112,6 +165,7 @@ const { session, backend, state, actions } = app
           @forget="backend.forget"
         />
         <UiTextField
+          ref="loginKeyField"
           v-model="session.managementKeyDraft.value"
           :label="t('auth.token')"
           type="password"
@@ -119,6 +173,7 @@ const { session, backend, state, actions } = app
           :placeholder="t('auth.placeholder')"
           reveal-password
           required
+          @keydown.enter="submitOnEnter($event, submitLogin)"
         />
       </div>
       <div class="session-actions">
