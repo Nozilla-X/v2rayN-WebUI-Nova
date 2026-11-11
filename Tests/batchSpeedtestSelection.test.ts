@@ -1,0 +1,92 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import { readFile } from 'node:fs/promises'
+import { createSourceHarness } from './helpers/loadSource.ts'
+
+function createApp(t) {
+  const harness = createSourceHarness()
+  const names = ['window', 'document', 'localStorage', 'Element']
+  const previous = Object.fromEntries(names.map(name => [name, globalThis[name]]))
+  const location = { pathname: '/', search: '', hash: '#/nodes' }
+  const history = {
+    state: null,
+    length: 1,
+    replaceState(state) { this.state = state },
+    pushState(state) { this.state = state; this.length += 1 },
+    back() {},
+    forward() {},
+  }
+  globalThis.window = {
+    location,
+    history,
+    innerWidth: 1280,
+    innerHeight: 800,
+    matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
+    addEventListener() {},
+    removeEventListener() {},
+    scrollTo() {},
+  }
+  globalThis.document = { documentElement: { dataset: {}, style: {}, lang: '' }, querySelector: () => null, addEventListener() {}, removeEventListener() {} }
+  globalThis.localStorage = { getItem: () => null, setItem() {} }
+  globalThis.Element = class {}
+  t.after(async () => {
+    await harness.dispose()
+    for (const name of names) {
+      if (previous[name] === undefined) delete globalThis[name]
+      else globalThis[name] = previous[name]
+    }
+  })
+  const component = harness.loadSource('Src/App.vue').default
+  const app = harness.setup(() => component.setup({}, { expose() {} }))
+  app.profiles.profiles.value = ['A', 'B', 'C'].map(indexId => ({ indexId }))
+  const calls = []
+  app.nodes.nodesPageActions.startSpeedTest = (action, ids) => { calls.push({ action, ids }); return Promise.resolve() }
+  const openContext = id => app.nodes.nodesPageActions.openContext({ clientX: 10, clientY: 10, preventDefault() {} }, { indexId: id })
+  return { app, calls, openContext }
+}
+
+test('all context speedtests retain the full selection when opened on a selected node', (t) => {
+  const { app, calls, openContext } = createApp(t)
+  app.profiles.selectedIds.value = ['A', 'B']
+  openContext('B')
+  for (const action of ['tcping', 'realping', 'speedtest', 'udpTest']) app.nodes.contextActions.testSelectedNodes(action)
+  assert.deepEqual(calls, ['tcping', 'realping', 'speedtest', 'udpTest'].map(action => ({ action, ids: ['A', 'B'] })))
+  assert.deepEqual(app.profiles.selectedIds.value, ['A', 'B'])
+})
+
+test('right-clicking an unselected node deliberately replaces the previous selection', (t) => {
+  const { app, calls, openContext } = createApp(t)
+  app.profiles.selectedIds.value = ['A', 'B']
+  openContext('C')
+  app.nodes.contextActions.testSelectedNodes('speedtest')
+  assert.deepEqual(app.profiles.selectedIds.value, ['C'])
+  assert.deepEqual(calls, [{ action: 'speedtest', ids: ['C'] }])
+})
+
+test('speedtest submission snapshots selection and does not fall back to testing every node', (t) => {
+  const { app, calls, openContext } = createApp(t)
+  app.profiles.selectedIds.value = ['A', 'B']
+  openContext('A')
+  app.nodes.contextActions.testSelectedNodes('realping')
+  app.profiles.selectedIds.value.push('C')
+  assert.deepEqual(calls[0].ids, ['A', 'B'])
+  app.profiles.selectedIds.value = []
+  app.profiles.profiles.value = []
+  app.contextMenu.value = null
+  app.nodes.contextActions.testSelectedNodes('speedtest')
+  assert.equal(calls.length, 1)
+})
+
+test('context-menu speedtests use the same selection resolver as keyboard shortcuts', async () => {
+  const [source, shortcuts, nodesPage] = await Promise.all([
+    readFile(new URL('../Src/Features/Nodes/NodeContextMenu.vue', import.meta.url), 'utf8'),
+    readFile(new URL('../Src/UI/useGlobalShortcuts.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../Src/Pages/NodesPage.vue', import.meta.url), 'utf8'),
+  ])
+  for (const action of ['tcping', 'realping', 'speedtest', 'udpTest']) {
+    assert.ok(source.includes(`contextActions.testSelectedNodes('${action}')`))
+  }
+  assert.doesNotMatch(source, /testSelectedNodes\('[^']+', contextMenu\.profile\)/)
+  for (const action of ['tcping', 'realping', 'speedtest']) assert.ok(shortcuts.includes(`actions.testSelectedNodes('${action}')`))
+  assert.doesNotMatch(nodesPage, /node-batch-actions/, 'batch commands stay in the selection-aware context menu')
+})

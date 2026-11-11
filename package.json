@@ -1,0 +1,42 @@
+{
+  "name": "v2rayn-webui-nova",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "A modern Material Design 3 WebUI for the v2rayN Web API",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "check-locales": "node Scripts/check-locales.ts",
+    "check:locales": "node Scripts/check-locales.ts",
+    "test": "node --test Tests/*.test.ts",
+    "typecheck": "vue-tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "build": "npm run check-locales && npm run typecheck && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "icons": "node Scripts/generate-icons.ts",
+    "theme": "node Scripts/generate-theme.ts",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "@fontsource-variable/roboto": "^5.3.0",
+    "@fontsource-variable/roboto-mono": "^5.3.0",
+    "@material-symbols/svg-400": "^0.48.3",
+    "@material/web": "^2.5.0",
+    "vue": "^3.5.13",
+    "vue-i18n": "^11.4.12"
+  },
+  "devDependencies": {
+    "@material/material-color-utilities": "^0.4.0",
+    "@types/node": "^24.19.2",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/compiler-sfc": "^3.5.13",
+    "playwright": "^1.64.0",
+    "postcss": "^8.5.3",
+    "typescript": "^5.9.3",
+    "vite": "^6.0.7",
+    "vue-tsc": "^3.3.11"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

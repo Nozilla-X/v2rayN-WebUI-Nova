@@ -1,0 +1,10 @@
+/*
+ * Shared Material 3 component styles. Each group lives in its own module so
+ * feature-specific CSS can stay small and easy to audit.
+ */
+
+@import "./buttons.css";
+@import "./fields.css";
+@import "./collections.css";
+@import "./overlays.css";
+@import "./feedback.css";

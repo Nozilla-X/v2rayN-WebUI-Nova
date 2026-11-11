@@ -1,0 +1,387 @@
+/* Material 3 navigation drawer, with an icon-only rail mode. */
+
+.desktop-sidebar {
+  display: flex;
+  min-width: 0;
+  height: 100dvh;
+  flex-direction: column;
+  gap: var(--nova-space-2);
+  padding: var(--nova-space-3);
+  overflow: hidden;
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.sidebar-brand {
+  display: flex;
+  min-width: 0;
+  min-height: 64px;
+  align-items: center;
+  gap: var(--nova-space-3);
+  padding: 0 var(--nova-space-2);
+  border-radius: var(--md-sys-shape-corner-large);
+  color: var(--md-sys-color-on-surface);
+  text-decoration: none;
+  transition: background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.sidebar-brand:hover {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
+}
+
+.sidebar-logo {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--md-sys-color-surface);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--md-sys-color-outline-variant) 52%, transparent),
+    var(--md-sys-elevation-level1);
+}
+
+.sidebar-logo img {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  object-fit: contain;
+}
+
+.sidebar-brand-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.sidebar-brand-copy strong {
+  overflow: hidden;
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-title-small-size);
+  font-weight: 600;
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-brand-copy small {
+  overflow: hidden;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-label-small-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-nav {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sidebar-label {
+  overflow: hidden;
+  margin: var(--nova-space-4) var(--nova-space-4) var(--nova-space-1);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-nav > .sidebar-label:first-child {
+  margin-top: var(--nova-space-1);
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 52px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--nova-space-3);
+  padding: 0 var(--nova-space-4);
+  overflow: hidden;
+  border-radius: var(--md-sys-shape-corner-full);
+  color: var(--md-sys-color-on-surface-variant);
+  text-decoration: none;
+  transition:
+    background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.nav-item .ui-icon {
+  width: 24px;
+  height: 24px;
+  color: currentColor;
+  transition: transform var(--md-sys-motion-duration-medium2) var(--nova-motion-spring-soft);
+}
+
+.nav-item-text {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: 500;
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
+  color: var(--md-sys-color-on-surface);
+}
+
+.nav-item:hover .ui-icon {
+  transform: translateX(1px);
+}
+
+.nav-item[aria-current="page"] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.nav-item[aria-current="page"] .nav-item-text {
+  font-weight: 500;
+}
+
+.sidebar-footer {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--nova-space-2);
+  padding-top: var(--nova-space-2);
+}
+
+.sidebar-status {
+  display: flex;
+  min-width: 0;
+  min-height: 56px;
+  align-items: center;
+  gap: var(--nova-space-3);
+  padding: var(--nova-space-2) var(--nova-space-3);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 52%, transparent);
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  text-align: left;
+  transition:
+    background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.sidebar-status:hover {
+  border-color: color-mix(in srgb, var(--md-sys-color-outline) 54%, transparent);
+  background: var(--md-sys-color-surface-container);
+}
+
+.sidebar-status .status-dot {
+  flex: 0 0 auto;
+}
+
+.sidebar-status-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0;
+}
+
+.sidebar-status-copy strong {
+  overflow: hidden;
+  font-size: var(--md-sys-typescale-label-medium-size);
+  font-weight: 600;
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-status-copy small {
+  overflow: hidden;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-label-small-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-status-arrow {
+  margin-left: auto;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.sidebar-rail-toggle {
+  align-self: center;
+}
+
+/* ---------- Rail / collapsed drawer ---------- */
+
+.app-shell.is-railed .desktop-sidebar {
+  padding-inline: var(--nova-space-2);
+}
+
+.app-shell.is-railed .sidebar-brand {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.app-shell.is-railed .sidebar-brand-copy,
+.app-shell.is-railed .sidebar-label,
+.app-shell.is-railed .nav-item-text,
+.app-shell.is-railed .sidebar-status-copy,
+.app-shell.is-railed .sidebar-status-arrow {
+  display: none;
+}
+
+.app-shell.is-railed .nav-item {
+  min-height: 56px;
+  justify-content: center;
+  padding: 0;
+}
+
+.app-shell.is-railed .sidebar-footer {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+
+.app-shell.is-railed .sidebar-status {
+  width: 56px;
+  min-height: 56px;
+  justify-content: center;
+  padding: 0;
+}
+
+.app-shell.is-railed .sidebar-rail-toggle {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.app-shell.is-railed .nav-item::after {
+  position: fixed;
+  z-index: var(--nova-z-menu);
+  left: calc(var(--nova-rail-width) + 6px);
+  max-width: 220px;
+  padding: 6px 10px;
+  overflow: hidden;
+  border-radius: var(--md-sys-shape-corner-small);
+  background: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+  content: attr(data-tooltip);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  opacity: 0;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  transform: translateX(-4px);
+  white-space: nowrap;
+  transition:
+    opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+    transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.app-shell.is-railed .nav-item:hover::after,
+.app-shell.is-railed .nav-item:focus-visible::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 1100px) {
+  .desktop-sidebar {
+    padding-inline: var(--nova-space-2);
+  }
+
+  .sidebar-brand {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .sidebar-brand-copy,
+  .sidebar-label,
+  .nav-item-text,
+  .sidebar-status-copy {
+    display: none;
+  }
+
+  /* UiIcon carries a scoped display rule, so hide it with higher specificity. */
+  .sidebar-status > .ui-icon.sidebar-status-arrow {
+    display: none;
+  }
+
+  .nav-item {
+    min-height: 56px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sidebar-footer {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+
+  .sidebar-status {
+    width: 56px;
+    min-height: 56px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sidebar-rail-toggle {
+    display: none;
+  }
+
+  .nav-item::after {
+    position: fixed;
+    z-index: var(--nova-z-menu);
+    left: calc(var(--nova-rail-width) + 6px);
+    max-width: 220px;
+    padding: 6px 10px;
+    overflow: hidden;
+    border-radius: var(--md-sys-shape-corner-small);
+    background: var(--md-sys-color-inverse-surface);
+    color: var(--md-sys-color-inverse-on-surface);
+    content: attr(data-tooltip);
+    font-size: var(--md-sys-typescale-label-medium-size);
+    line-height: var(--md-sys-typescale-label-medium-line-height);
+    opacity: 0;
+    pointer-events: none;
+    text-overflow: ellipsis;
+    transform: translateX(-4px);
+    white-space: nowrap;
+    transition:
+      opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+      transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+
+  .nav-item:hover::after,
+  .nav-item:focus-visible::after {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 860px) {
+  .desktop-sidebar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-item .ui-icon {
+    transition: none;
+  }
+
+  /* The rail tooltip may fade, but it does not slide into place. */
+  .nav-item::after {
+    transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+}

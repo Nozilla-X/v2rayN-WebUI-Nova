@@ -1,0 +1,283 @@
+/*
+ * v2rayN Nova design tokens.
+ *
+ * Color roles are generated from the Nova brand seed into color-roles.css.
+ * Everything visual resolves through this file: Material 3 semantic roles,
+ * an authentic typescale, shape/elevation/motion, and Nova layout constants.
+ * Components never carry private hex colors, shadows or radii.
+ */
+@import "./color-roles.css";
+
+:root {
+  /* Reference typefaces. Roboto is bundled locally; CJK falls back to the
+     platform's best Noto/PingFang/YaHei face instead of shipping megabytes. */
+  --md-ref-typeface-brand: "Roboto Variable", "Roboto", "Noto Sans SC", "Noto Sans TC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --md-ref-typeface-plain: var(--md-ref-typeface-brand);
+  --md-ref-typeface-mono: "Roboto Mono Variable", "Roboto Mono", "JetBrains Mono", "Cascadia Mono", ui-monospace, monospace;
+  --md-sys-typescale-font-plain: var(--md-ref-typeface-plain);
+  --md-sys-typescale-font-mono: var(--md-ref-typeface-mono);
+  --md-ref-typeface-weight-regular: 400;
+  --md-ref-typeface-weight-medium: 500;
+  --md-ref-typeface-weight-bold: 700;
+
+  /* Material 3 typescale. Both the legacy `-line` aliases used by Nova pages
+     and the official `-line-height` / `-tracking` tokens consumed by
+     @material/web resolve to the same values. */
+  --md-sys-typescale-display-large-size: 3.5625rem;
+  --md-sys-typescale-display-large-line: 4rem;
+  --md-sys-typescale-display-large-line-height: 4rem;
+  --md-sys-typescale-display-large-tracking: -0.015625rem;
+  --md-sys-typescale-display-large-weight: 400;
+  --md-sys-typescale-display-medium-size: 2.8125rem;
+  --md-sys-typescale-display-medium-line: 3.25rem;
+  --md-sys-typescale-display-medium-line-height: 3.25rem;
+  --md-sys-typescale-display-medium-tracking: 0;
+  --md-sys-typescale-display-medium-weight: 400;
+  --md-sys-typescale-display-small-size: 2.25rem;
+  --md-sys-typescale-display-small-line: 2.75rem;
+  --md-sys-typescale-display-small-line-height: 2.75rem;
+  --md-sys-typescale-display-small-tracking: 0;
+  --md-sys-typescale-display-small-weight: 400;
+
+  --md-sys-typescale-headline-large-size: 2rem;
+  --md-sys-typescale-headline-large-line: 2.5rem;
+  --md-sys-typescale-headline-large-line-height: 2.5rem;
+  --md-sys-typescale-headline-large-tracking: 0;
+  --md-sys-typescale-headline-large-weight: 400;
+  --md-sys-typescale-headline-medium-size: 1.75rem;
+  --md-sys-typescale-headline-medium-line: 2.25rem;
+  --md-sys-typescale-headline-medium-line-height: 2.25rem;
+  --md-sys-typescale-headline-medium-tracking: 0;
+  --md-sys-typescale-headline-medium-weight: 400;
+  --md-sys-typescale-headline-small-size: 1.5rem;
+  --md-sys-typescale-headline-small-line: 2rem;
+  --md-sys-typescale-headline-small-line-height: 2rem;
+  --md-sys-typescale-headline-small-tracking: 0;
+  --md-sys-typescale-headline-small-weight: 400;
+
+  --md-sys-typescale-title-large-size: 1.375rem;
+  --md-sys-typescale-title-large-line: 1.75rem;
+  --md-sys-typescale-title-large-line-height: 1.75rem;
+  --md-sys-typescale-title-large-tracking: 0;
+  --md-sys-typescale-title-large-weight: 400;
+  --md-sys-typescale-title-medium-size: 1rem;
+  --md-sys-typescale-title-medium-line: 1.5rem;
+  --md-sys-typescale-title-medium-line-height: 1.5rem;
+  --md-sys-typescale-title-medium-tracking: 0.009375rem;
+  --md-sys-typescale-title-medium-weight: 500;
+  --md-sys-typescale-title-small-size: 0.875rem;
+  --md-sys-typescale-title-small-line: 1.25rem;
+  --md-sys-typescale-title-small-line-height: 1.25rem;
+  --md-sys-typescale-title-small-tracking: 0.00625rem;
+  --md-sys-typescale-title-small-weight: 500;
+
+  --md-sys-typescale-body-large-size: 1rem;
+  --md-sys-typescale-body-large-line: 1.5rem;
+  --md-sys-typescale-body-large-line-height: 1.5rem;
+  --md-sys-typescale-body-large-tracking: 0.03125rem;
+  --md-sys-typescale-body-large-weight: 400;
+  --md-sys-typescale-body-medium-size: 0.875rem;
+  --md-sys-typescale-body-medium-line: 1.25rem;
+  --md-sys-typescale-body-medium-line-height: 1.25rem;
+  --md-sys-typescale-body-medium-tracking: 0.015625rem;
+  --md-sys-typescale-body-medium-weight: 400;
+  --md-sys-typescale-body-small-size: 0.75rem;
+  --md-sys-typescale-body-small-line: 1rem;
+  --md-sys-typescale-body-small-line-height: 1rem;
+  --md-sys-typescale-body-small-tracking: 0.025rem;
+  --md-sys-typescale-body-small-weight: 400;
+
+  --md-sys-typescale-label-large-size: 0.875rem;
+  --md-sys-typescale-label-large-line: 1.25rem;
+  --md-sys-typescale-label-large-line-height: 1.25rem;
+  --md-sys-typescale-label-large-tracking: 0.00625rem;
+  --md-sys-typescale-label-large-weight: 500;
+  --md-sys-typescale-label-medium-size: 0.75rem;
+  --md-sys-typescale-label-medium-line: 1rem;
+  --md-sys-typescale-label-medium-line-height: 1rem;
+  --md-sys-typescale-label-medium-tracking: 0.03125rem;
+  --md-sys-typescale-label-medium-weight: 500;
+  --md-sys-typescale-label-small-size: 0.6875rem;
+  --md-sys-typescale-label-small-line: 1rem;
+  --md-sys-typescale-label-small-line-height: 1rem;
+  --md-sys-typescale-label-small-tracking: 0.03125rem;
+  --md-sys-typescale-label-small-weight: 500;
+
+  --md-sys-typescale-weight-regular: 400;
+  --md-sys-typescale-weight-medium: 500;
+  --md-sys-typescale-weight-semibold: 600;
+
+  /* Shape. */
+  --md-sys-shape-corner-none: 0;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-large-increased: 20px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
+  --md-sys-shape-corner-extra-small-top: 4px 4px 0 0;
+  --md-sys-shape-corner-large-top: 16px 16px 0 0;
+  --md-sys-shape-corner-large-start: 16px 0 0 16px;
+  --md-sys-shape-corner-large-end: 0 16px 16px 0;
+  --md-sys-shape-corner-extra-large-top: 28px 28px 0 0;
+
+  /* State layer opacities. */
+  --md-sys-state-hover-state-layer-opacity: 0.08;
+  --md-sys-state-focus-state-layer-opacity: 0.1;
+  --md-sys-state-pressed-state-layer-opacity: 0.1;
+  --md-sys-state-dragged-state-layer-opacity: 0.16;
+  --md-sys-state-focus-indicator-thickness: 2px;
+  --md-sys-state-focus-indicator-inner-offset: 2px;
+  --md-sys-state-focus-indicator-outer-offset: 2px;
+
+  /* Extended semantic roles. Success/warning come from generated roles. */
+  --nova-color-info-container: var(--md-sys-color-primary-container);
+  --nova-color-on-info-container: var(--md-sys-color-on-primary-container);
+  --nova-color-state-hover: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+  --nova-color-state-focus: color-mix(in srgb, var(--md-sys-color-on-surface) 10%, transparent);
+  --nova-color-state-pressed: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --nova-color-divider: color-mix(in srgb, var(--md-sys-color-outline-variant) 72%, transparent);
+  --nova-color-selected-row: color-mix(in srgb, var(--md-sys-color-secondary-container) 82%, var(--md-sys-color-surface));
+  --nova-color-current-row: color-mix(in srgb, var(--md-sys-color-tertiary-container) 56%, var(--md-sys-color-surface));
+  --nova-color-scrim: color-mix(in srgb, var(--md-sys-color-scrim) 42%, transparent);
+  --nova-color-code-surface: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 62%, var(--md-sys-color-surface));
+  --nova-color-code-text: var(--md-sys-color-on-surface);
+  --nova-color-card: var(--md-sys-color-surface-container-lowest);
+  --nova-color-card-nested: var(--md-sys-color-surface-container-low);
+  --nova-card-radius: 24px;
+
+  /* Liquid Glass material. A restrained local enhancement layered on M3. */
+  --nova-glass-fill: color-mix(in srgb, var(--md-sys-color-surface-container-high) 68%, transparent);
+  --nova-glass-fill-strong: color-mix(in srgb, var(--md-sys-color-surface-container-high) 84%, transparent);
+  --nova-glass-border: color-mix(in srgb, var(--md-sys-color-outline) 26%, transparent);
+  --nova-glass-highlight: color-mix(in srgb, #ffffff 62%, transparent);
+  --nova-glass-highlight-soft: color-mix(in srgb, #ffffff 26%, transparent);
+  --nova-glass-shadow: 0 16px 40px color-mix(in srgb, var(--md-sys-color-shadow) 18%, transparent),
+    0 2px 8px color-mix(in srgb, var(--md-sys-color-shadow) 12%, transparent);
+  --nova-glass-tint: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+  --nova-glass-blur: 24px;
+  --nova-glass-saturation: 165%;
+
+  /* Spacing and sizing. Four-pixel rhythm; 24px page rhythm. */
+  --nova-space-0: 0;
+  --nova-space-1: 4px;
+  --nova-space-2: 8px;
+  --nova-space-3: 12px;
+  --nova-space-4: 16px;
+  --nova-space-5: 20px;
+  --nova-space-6: 24px;
+  --nova-space-7: 32px;
+  --nova-space-8: 40px;
+  --nova-space-9: 48px;
+  --nova-space-10: 64px;
+  --nova-control-height: 40px;
+  --nova-control-height-comfortable: 48px;
+  --nova-control-height-touch: 48px;
+  --nova-field-height: 56px;
+  --nova-icon-size: 20px;
+  --nova-icon-size-large: 24px;
+  --nova-touch-target: 48px;
+  --nova-sidebar-width: 280px;
+  --nova-rail-width: 88px;
+  --nova-topbar-height: 68px;
+  --nova-mobile-topbar-height: 64px;
+  --nova-mobile-nav-height: 80px;
+  --nova-content-max: 1600px;
+  --nova-page-padding: clamp(16px, 2.4vw, 32px);
+  --nova-page-gap: 24px;
+  --nova-card-padding: 24px;
+  --nova-table-row-height: 56px;
+  --nova-menu-width: 240px;
+  --nova-dialog-max: 600px;
+  --nova-dialog-wide: 920px;
+  --nova-dialog-confirm: 440px;
+  --nova-drawer-max: 420px;
+  --nova-log-line-height: 1.6;
+  --nova-safe-top: env(safe-area-inset-top, 0px);
+  --nova-safe-right: env(safe-area-inset-right, 0px);
+  --nova-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nova-safe-left: env(safe-area-inset-left, 0px);
+
+  /* Elevation, matching Material 3's tonal shadow ladder. */
+  --md-sys-elevation-level0: none;
+  --md-sys-elevation-level1: 0 1px 2px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent), 0 1px 3px 1px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent);
+  --md-sys-elevation-level2: 0 1px 2px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent), 0 2px 6px 2px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent);
+  --md-sys-elevation-level3: 0 4px 8px 3px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent), 0 1px 3px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent);
+  --md-sys-elevation-level4: 0 6px 10px 4px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent), 0 2px 3px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent);
+  --md-sys-elevation-level5: 0 8px 12px 6px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent), 0 4px 4px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent);
+
+  /* Motion. */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-duration-long3: 550ms;
+  --md-sys-motion-duration-long4: 600ms;
+  --md-sys-motion-duration-extra-long1: 700ms;
+  --md-sys-motion-duration-extra-long2: 800ms;
+  --md-sys-motion-duration-extra-long3: 900ms;
+  --md-sys-motion-duration-extra-long4: 1000ms;
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --nova-motion-glass: 460ms;
+  --nova-motion-spring: cubic-bezier(0.34, 1.28, 0.64, 1);
+  --nova-motion-spring-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Layering. */
+  --nova-z-sidebar: 20;
+  --nova-z-topbar: 18;
+  --nova-z-mobile-nav: 40;
+  --nova-z-fab: 30;
+  --nova-z-back: 45;
+  --nova-z-menu: 70;
+  --nova-z-dialog: 90;
+  --nova-z-toast: 120;
+  --nova-z-skip: 140;
+
+  /* Focus. */
+  --nova-focus-ring: 2px solid var(--md-sys-color-primary);
+  --nova-focus-offset: 2px;
+  --nova-disabled-opacity: 0.38;
+}
+
+:root[data-theme="dark"] {
+  /* Dark elevation reads as lighter tones, so step the page below the sidebar
+     and cards instead of aliasing background to surface (both #1b1b1f). */
+  --md-sys-color-background: var(--md-sys-color-surface-dim);
+  --md-sys-color-on-background: var(--md-sys-color-on-surface);
+  --nova-color-info-container: var(--md-sys-color-primary-container);
+  --nova-color-on-info-container: var(--md-sys-color-on-primary-container);
+  --nova-color-divider: color-mix(in srgb, var(--md-sys-color-outline-variant) 68%, transparent);
+  --nova-color-selected-row: color-mix(in srgb, var(--md-sys-color-secondary-container) 62%, var(--md-sys-color-surface));
+  --nova-color-current-row: color-mix(in srgb, var(--md-sys-color-tertiary-container) 42%, var(--md-sys-color-surface));
+  --nova-color-scrim: color-mix(in srgb, var(--md-sys-color-scrim) 62%, transparent);
+  --nova-color-code-surface: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 66%, var(--md-sys-color-surface));
+  --nova-color-card: var(--md-sys-color-surface-container);
+  --nova-color-card-nested: var(--md-sys-color-surface-container-high);
+  --nova-glass-fill: color-mix(in srgb, var(--md-sys-color-surface-container-high) 62%, transparent);
+  --nova-glass-fill-strong: color-mix(in srgb, var(--md-sys-color-surface-container-high) 82%, transparent);
+  --nova-glass-border: color-mix(in srgb, var(--md-sys-color-outline) 34%, transparent);
+  --nova-glass-highlight: color-mix(in srgb, #ffffff 22%, transparent);
+  --nova-glass-highlight-soft: color-mix(in srgb, #ffffff 10%, transparent);
+  --nova-glass-shadow: 0 20px 48px color-mix(in srgb, #000000 42%, transparent),
+    0 2px 10px color-mix(in srgb, #000000 28%, transparent);
+  --nova-glass-tint: color-mix(in srgb, var(--md-sys-color-primary) 14%, transparent);
+}
+
+/* A theme can be applied by the inline bootstrap; this covers storage-blocked first loads. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+  }
+}

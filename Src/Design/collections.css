@@ -1,0 +1,554 @@
+/* Tabs, cards, lists, data tables and pagination. */
+
+.tabs {
+  display: flex;
+  min-width: 0;
+  gap: var(--nova-space-1);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--nova-color-divider);
+  scrollbar-color: var(--md-sys-color-outline-variant) transparent;
+  scrollbar-width: thin;
+}
+
+.tabs::-webkit-scrollbar {
+  display: block;
+  height: 4px;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+  border: 0;
+  background: var(--md-sys-color-outline-variant);
+}
+
+@media (max-width: 860px) {
+  .tabs {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, var(--md-sys-color-on-surface) 10px, var(--md-sys-color-on-surface) calc(100% - 18px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, var(--md-sys-color-on-surface) 10px, var(--md-sys-color-on-surface) calc(100% - 18px), transparent 100%);
+  }
+}
+
+.tab {
+  position: relative;
+  min-height: 48px;
+  flex: 0 0 auto;
+  padding: 0 var(--nova-space-4);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-small) var(--md-sys-shape-corner-small) 0 0;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-weight-medium);
+  white-space: nowrap;
+  transition: color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.tab::before {
+  position: absolute;
+  right: var(--nova-space-4);
+  bottom: 0;
+  left: var(--nova-space-4);
+  height: 3px;
+  border-radius: var(--md-sys-shape-corner-full) var(--md-sys-shape-corner-full) 0 0;
+  background: var(--md-sys-color-primary);
+  content: "";
+  opacity: 0;
+  transform: scaleX(0.4);
+  transition:
+    opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized),
+    transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized);
+}
+
+.tab[aria-selected="true"],
+.tab[aria-pressed="true"] {
+  color: var(--md-sys-color-primary);
+}
+
+.tab[aria-selected="true"]::before,
+.tab[aria-pressed="true"]::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* ---------- Cards / panels ---------- */
+
+.card {
+  min-width: 0;
+  padding: var(--nova-card-padding);
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 58%, transparent);
+  border-radius: var(--nova-card-radius);
+  background: var(--nova-color-card);
+}
+
+.card-elevated {
+  border-color: color-mix(in srgb, var(--md-sys-color-outline-variant) 30%, transparent);
+  background: var(--nova-color-card);
+  box-shadow: var(--md-sys-elevation-level1);
+}
+
+.card-outlined {
+  border-color: var(--md-sys-color-outline-variant);
+  background: transparent;
+}
+
+.card-flat {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.card-head {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--nova-space-3);
+  margin-bottom: var(--nova-space-4);
+}
+
+.card-head h2,
+.card-head h3,
+.section-title h2,
+.section-title h3 {
+  margin: 0;
+  font-size: var(--md-sys-typescale-title-medium-size);
+  font-weight: var(--md-sys-typescale-title-medium-weight);
+  line-height: var(--md-sys-typescale-title-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+}
+
+.card-head small {
+  display: block;
+  margin-top: var(--nova-space-1);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: var(--md-sys-typescale-body-small-line);
+}
+
+.section {
+  min-width: 0;
+  padding-block: var(--nova-space-5);
+  border-top: 1px solid var(--nova-color-divider);
+}
+
+.section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nova-space-3);
+  margin-bottom: var(--nova-space-4);
+}
+
+.section-title h2,
+.section-title h3 {
+  margin: 0;
+}
+
+.section-title small {
+  display: block;
+  margin-top: var(--nova-space-1);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+  font-weight: var(--md-sys-typescale-weight-regular);
+  line-height: var(--md-sys-typescale-body-small-line);
+}
+
+/* Keep a heading readable beside its trailing control on narrow cards. */
+@media (max-width: 520px) {
+  .section-title {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: var(--nova-space-3);
+  }
+
+  .section-title > h2,
+  .section-title > h3,
+  .section-title > div {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .section-title > small {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .section-title > .icon-btn,
+  .section-title > .badge {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* ---------- Lists ---------- */
+
+.list {
+  display: grid;
+  gap: var(--nova-space-1);
+}
+
+.list-item {
+  display: flex;
+  min-height: var(--nova-touch-target);
+  align-items: center;
+  gap: var(--nova-space-3);
+  padding: var(--nova-space-2) var(--nova-space-3);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  text-align: left;
+}
+
+button.list-item:hover {
+  background: var(--nova-color-state-hover);
+}
+
+.list-item .ui-icon {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.list-item-body {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 2px;
+}
+
+.list-item-title {
+  font-size: var(--md-sys-typescale-body-large-size);
+  line-height: var(--md-sys-typescale-body-large-line);
+}
+
+.list-item-support {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: var(--md-sys-typescale-body-small-line-height);
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.list-item-trailing {
+  flex: 0 0 auto;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---------- Data tables ---------- */
+
+.table-shell {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 58%, transparent);
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--nova-color-card);
+  overscroll-behavior: contain;
+}
+
+/* A persistent scrollbar is the only affordance that tells a dense table it
+   continues sideways; auto-hiding overlay bars made clipped columns look broken.
+   The standard scrollbar properties must stay unset here: specifying them makes
+   Chromium ignore the always-visible ::-webkit-scrollbar styling. */
+.table-shell::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.table-shell::-webkit-scrollbar-track {
+  background: var(--md-sys-color-surface-container);
+}
+
+.table-shell::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.table-shell::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-outline-variant);
+  background-clip: padding-box;
+}
+
+.table-shell::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-outline);
+  background-clip: padding-box;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  white-space: nowrap;
+}
+
+.data-table th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  height: 48px;
+  padding: var(--nova-space-2) var(--nova-space-3);
+  border-bottom: 1px solid var(--nova-color-divider);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  text-align: left;
+}
+
+.data-table td {
+  height: var(--nova-table-row-height);
+  padding: var(--nova-space-2) var(--nova-space-3);
+  border-bottom: 1px solid var(--nova-color-divider);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table tbody tr {
+  transition: background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.data-table tbody tr:hover {
+  background: var(--nova-color-state-hover);
+}
+
+.data-table tbody tr.is-current {
+  background: var(--nova-color-current-row);
+  box-shadow: inset 3px 0 var(--md-sys-color-tertiary);
+}
+
+.data-table tbody tr.is-selected {
+  background: var(--nova-color-selected-row);
+}
+
+.data-table tbody tr.is-current.is-selected {
+  box-shadow: inset 3px 0 var(--md-sys-color-primary);
+}
+
+.data-table tbody tr:focus-visible {
+  outline: var(--nova-focus-ring);
+  outline-offset: -2px;
+}
+
+.data-table .cell-check {
+  width: 56px;
+  text-align: center;
+}
+
+.data-table .cell-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table .cell-actions {
+  width: 56px;
+  text-align: right;
+}
+
+/* Keep row actions reachable when a dense table scrolls horizontally. */
+.table-shell.sticky-actions .data-table th.cell-actions {
+  position: sticky;
+  z-index: 4;
+  right: 0;
+  border-left: 1px solid var(--nova-color-divider);
+  background: var(--md-sys-color-surface-container);
+}
+
+.table-shell.sticky-actions .data-table td.cell-actions {
+  position: sticky;
+  z-index: 1;
+  right: 0;
+  border-left: 1px solid var(--nova-color-divider);
+  background-color: var(--nova-color-card);
+}
+
+.table-shell.sticky-actions.is-scrollable-x:not(.is-scroll-end) .data-table th.cell-actions,
+.table-shell.sticky-actions.is-scrollable-x:not(.is-scroll-end) .data-table td.cell-actions {
+  box-shadow: -10px 0 14px -14px var(--md-sys-color-on-surface);
+}
+
+.table-shell.sticky-actions .data-table tbody tr:hover td.cell-actions {
+  background-image: linear-gradient(var(--nova-color-state-hover), var(--nova-color-state-hover));
+}
+
+.table-shell.sticky-actions .data-table tbody tr.is-current td.cell-actions {
+  background-color: var(--nova-color-current-row);
+  background-image: none;
+}
+
+.table-shell.sticky-actions .data-table tbody tr.is-selected td.cell-actions {
+  background-color: var(--nova-color-selected-row);
+  background-image: none;
+}
+
+.table-shell.sticky-actions:focus-visible {
+  outline: var(--nova-focus-ring);
+  outline-offset: -2px;
+}
+
+.data-table .empty-cell {
+  height: 160px;
+  color: var(--md-sys-color-on-surface-variant);
+  text-align: center;
+  white-space: normal;
+}
+
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nova-space-1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  white-space: nowrap;
+}
+
+.sort-button:hover {
+  color: var(--md-sys-color-primary);
+}
+
+.sort-button .ui-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--md-sys-color-primary);
+}
+
+/* ---------- Page headers and toolbars ---------- */
+
+.page-toolbar {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nova-space-3);
+}
+
+.page-toolbar .toolbar-actions {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--nova-space-2);
+}
+
+.page-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--nova-space-3);
+}
+
+.page-title h1 {
+  margin: 0;
+}
+
+.count-pill {
+  min-width: 28px;
+  padding: 2px var(--nova-space-2);
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  font-weight: var(--md-sys-typescale-weight-semibold);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.selection-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nova-space-2);
+  padding: 2px 2px 2px var(--nova-space-3);
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  white-space: nowrap;
+}
+
+.selection-pill .icon-btn {
+  width: 28px;
+  height: 28px;
+}
+
+/* ---------- Pagination ---------- */
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nova-space-2);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--nova-space-1);
+}
+
+/* ---------- Dividers and metadata ---------- */
+
+.divider {
+  height: 1px;
+  margin: var(--nova-space-2) 0;
+  border: 0;
+  background: var(--nova-color-divider);
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: var(--nova-space-3);
+}
+
+.meta-item {
+  display: grid;
+  gap: 2px;
+}
+
+.meta-item small {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-medium-size);
+}
+
+.meta-item strong {
+  font-size: var(--md-sys-typescale-body-medium-size);
+  font-weight: var(--md-sys-typescale-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The selected-tab indicator fades into place without growing sideways. */
+  .tab::before {
+    transition: opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized);
+  }
+}
