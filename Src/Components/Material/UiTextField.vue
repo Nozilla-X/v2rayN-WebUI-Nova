@@ -98,9 +98,11 @@ async function attachNativeSync() {
   // before Material's validator can overwrite a silently autofilled control.
   // Capture them at the shadow root so the live value is committed first.
   const sync = () => { syncFromDom() }
+  root.addEventListener('focus', sync, true)
   root.addEventListener('blur', sync, true)
   root.addEventListener('change', sync, true)
   detachNativeSync = () => {
+    root.removeEventListener('focus', sync, true)
     root.removeEventListener('blur', sync, true)
     root.removeEventListener('change', sync, true)
   }
