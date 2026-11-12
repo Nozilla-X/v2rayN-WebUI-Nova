@@ -274,7 +274,14 @@ function preventRangeTextSelection(event: MouseEvent) {
 
 <style scoped>
 .nodes-table-shell {
-  max-height: min(68dvh, 820px);
+  /*
+   * Track the window height instead of capping at a fixed 820px. The 268px
+   * budget covers the top bar (68), page padding (2 × 32), toolbar (68),
+   * page gaps (2 × 12), footer hint (20) and the workspace tail (24), so the
+   * table ends just above the bottom inset on any display. The floor keeps
+   * short windows usable; the workspace scrolls if the budget is exceeded.
+   */
+  max-height: max(320px, calc(100dvh - 268px));
 }
 
 .profile-table .cell-drag {

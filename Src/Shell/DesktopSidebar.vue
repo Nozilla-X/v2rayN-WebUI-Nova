@@ -15,6 +15,7 @@ const { route, runtime, state, actions } = app
 
 const coreRunning = computed(() => Boolean(runtime.status.value?.coreRunning))
 const coreState = computed(() => String(runtime.status.value?.runtimeState || ''))
+const statusLabel = computed(() => `${coreRunning.value ? t('status.coreRunning') : t('status.coreStopped')} · ${runtime.runtimeVersion.value || t('brand')}`)
 
 function go(page: Parameters<typeof route.navigate>[0]) {
   void actions.navigate(page)
@@ -64,14 +65,12 @@ function go(page: Parameters<typeof route.navigate>[0]) {
     </nav>
 
     <div class="sidebar-footer">
-      <button type="button" class="sidebar-status" :aria-label="t('header.coreStatus')" @click="state.showCorePanel.value = true">
+      <div class="sidebar-status" role="status" :aria-label="statusLabel">
         <span class="status-dot" :class="{ 'is-on': coreRunning, 'is-warning': coreState === 'starting' || coreState === 'restarting', 'is-error': coreState === 'faulted' }" />
         <span class="sidebar-status-copy">
-          <strong>{{ coreRunning ? t('status.coreRunning') : t('status.coreStopped') }}</strong>
           <small>{{ runtime.runtimeVersion.value || t('brand') }}</small>
         </span>
-        <UiIcon name="chevron-right" :size="18" class="sidebar-status-arrow" />
-      </button>
+      </div>
 
       <UiIconButton
         class="sidebar-rail-toggle"
