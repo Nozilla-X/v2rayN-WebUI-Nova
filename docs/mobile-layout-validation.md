@@ -36,7 +36,8 @@ Nova treats mobile as a separate interaction model, not a compressed desktop tab
 | height `≤500px` | Floating tab bar hidden |
 
 These boundaries are literal CSS media queries; JavaScript uses the same `860px` value in
-`useMediaQuery` for the mobile bulk bar and toolbar composition.
+`useMediaQuery` for the mobile bulk bar. The toolbar no longer switches composition by
+viewport: desktop and mobile both leave context-menu actions to the shared node menu.
 
 ## Automated checks
 

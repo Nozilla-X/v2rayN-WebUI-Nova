@@ -104,6 +104,7 @@ const ICONS = {
   translate: 'translate',
   unlock: 'lock_open',
   upload: 'upload',
+  'view-column': 'view_column',
   warning: 'warning',
   wifi: 'wifi',
 }

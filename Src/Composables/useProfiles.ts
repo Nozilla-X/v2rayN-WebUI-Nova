@@ -74,6 +74,20 @@ export function useProfiles(options: ApiServices & {
     coreTypes.value = editorOptions.value.coreTypes || []
   }
 
+  /**
+   * An omitted `subscriptionId` means "the backend's current group", so the
+   * UI's all-group selection must be sent as an explicit empty value. Without
+   * this the chip could say "all groups" while the table showed only the
+   * backend's current group, especially after signing in again.
+   */
+  function groupPath(path: string, groupId: string, extra: Dict = {}): string {
+    const params = new URLSearchParams({ subscriptionId: groupId })
+    for (const [key, value] of Object.entries(extra)) {
+      if (value !== undefined && value !== null && value !== '') params.set(key, String(value))
+    }
+    return `${path}?${params}`
+  }
+
   async function loadGroups() {
     groups.value = await options.data('/api/profile-groups') || []
     if (!groups.value.some((group) => group.id === selectedGroup.value)) {
@@ -86,7 +100,7 @@ export function useProfiles(options: ApiServices & {
     const resultRevision = testResultRevision
     const groupId = selectedGroup.value
     const query = filter.value.trim()
-    const path = options.queryPath('/api/profiles', { subscriptionId: groupId, filter: query })
+    const path = groupPath('/api/profiles', groupId, { filter: query })
     const rows = await options.data(path) || []
     if (sequence !== profilesLoadSequence || groupId !== selectedGroup.value || query !== filter.value.trim()) return
     const rowMap = new Map<string, Dict>(rows.map((row: Dict) => [row.indexId, row]))
@@ -235,6 +249,17 @@ export function useProfiles(options: ApiServices & {
     } catch (error) { options.showError(error) }
   }
 
+  async function moveProfileToPosition(profileId: string, position: number) {
+    try {
+      const result = await options.request('/api/profiles/move', {
+        method: 'POST',
+        body: { profileId, direction: 'position', position },
+      })
+      options.showNotice(options.operationMessage(result))
+      await loadProfiles()
+    } catch (error) { options.showError(error) }
+  }
+
   async function runProfileAction(action: string, profileIds = selectedIds.value) {
     if (!profileIds.length && !['test-group', 'deduplicate', 'remove-invalid'].includes(action)) {
       options.showNotice(t('nodes.selectionRequired'), 'error')
@@ -248,9 +273,9 @@ export function useProfiles(options: ApiServices & {
       } else if (action === 'copy') {
         result = await options.request('/api/profiles/copy', { method: 'POST', body: { profileIds } })
       } else if (action === 'deduplicate') {
-        result = await options.request(options.queryPath('/api/profiles/deduplicate', { subscriptionId: selectedGroup.value }), { method: 'POST' })
+        result = await options.request(groupPath('/api/profiles/deduplicate', selectedGroup.value), { method: 'POST' })
       } else if (action === 'remove-invalid') {
-        result = await options.request(options.queryPath('/api/profiles/invalid-test-results', { subscriptionId: selectedGroup.value }), { method: 'DELETE' })
+        result = await options.request(groupPath('/api/profiles/invalid-test-results', selectedGroup.value), { method: 'DELETE' })
       } else if (action === 'test-group') {
         await startSpeedTest('mixedtest', [])
         return
@@ -278,7 +303,7 @@ export function useProfiles(options: ApiServices & {
     const ids = [...selectedIds.value]
     try {
       // The move API uses the whole group, including rows hidden by the search filter.
-      const rows: Dict[] = await options.data(options.queryPath('/api/profiles', { subscriptionId: selectedGroup.value })) || []
+      const rows: Dict[] = await options.data(groupPath('/api/profiles', selectedGroup.value)) || []
       for (const id of planSelectedMoves(rows.map((profile) => profile.indexId), ids, direction)) {
         await options.request('/api/profiles/move', { method: 'POST', body: { profileId: id, direction, position: -1 } })
       }
@@ -295,7 +320,7 @@ export function useProfiles(options: ApiServices & {
     try {
       const groupId = selectedGroup.value
       const ids = [...selectedIds.value]
-      const rows: Dict[] = await options.data(options.queryPath('/api/profiles', { subscriptionId: groupId })) || []
+      const rows: Dict[] = await options.data(groupPath('/api/profiles', groupId)) || []
       if (groupId !== selectedGroup.value) return
       const moves = planSelectedPositionMoves(rows.map((profile) => profile.indexId), ids, position - 1)
       for (const move of moves) {
@@ -611,7 +636,7 @@ export function useProfiles(options: ApiServices & {
 
   async function loadProfileCatalog() {
     const groupIds = [...new Set(['', ...groups.value.map((group) => group.id).filter(Boolean)])]
-    const lists = await Promise.all(groupIds.map((subscriptionId) => options.data(subscriptionId ? options.queryPath('/api/profiles', { subscriptionId }) : '/api/profiles?subscriptionId=')))
+    const lists = await Promise.all(groupIds.map((subscriptionId) => options.data(groupPath('/api/profiles', subscriptionId))))
     profileCatalog.value = [...new Map(lists.flat().map((item: Dict) => [item.indexId, item])).values()]
   }
 
@@ -687,7 +712,7 @@ export function useProfiles(options: ApiServices & {
     profiles, groups, selectedGroup, selectedIds, protocolTypes, coreTypes, showProfileForm, showImportForm, showExportDialog, loadEditorOptions, loadGroups, loadProfiles,
     openEditProfile, selectProfile, startSpeedTest, runProfileAction, reset,
     nodesPageState, profileModalState, importProfilesModalState, exportModalState,
-    nodesPageActions: { openAddProfile, openImportProfiles, startSpeedTest, runProfileAction, stopSpeedTests, applySpeedTestResult, changeGroup, generateGroups, loadProfiles, toggleAllVisible, toggleProfile, sortProfiles, selectProfile, formatDelay, moveSelectedToGroup, moveSelected, moveSelectedPosition, exportSelected, openContext, openSubscriptionContext, focusProfile, setFocusedProfile, handleRowKeydown },
+    nodesPageActions: { openAddProfile, openImportProfiles, startSpeedTest, runProfileAction, stopSpeedTests, applySpeedTestResult, changeGroup, generateGroups, loadProfiles, toggleAllVisible, toggleProfile, sortProfiles, moveProfileToPosition, selectProfile, formatDelay, moveSelectedToGroup, moveSelected, moveSelectedPosition, exportSelected, openContext, openSubscriptionContext, focusProfile, setFocusedProfile, handleRowKeydown },
     profileModalActions: { saveProfile, toggleGroupChild, moveGroupChild, closeProfileEditor },
     importProfilesModalActions: { importProfiles, readImportFile, pasteImport },
     exportModalActions: { exportSelected, copyExport, downloadExport },

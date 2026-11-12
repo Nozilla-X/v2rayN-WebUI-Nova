@@ -88,17 +88,6 @@ const profileMenu = computed<MenuEntry[]>(() => {
       ],
     },
     {
-      id: 'move',
-      label: t('nodes.move'),
-      children: [
-        { id: 'move-top', label: t('nodes.top'), shortcut: 'T', disabled: !hasSelection, run: () => contextActions.moveSelectedNodes('top') },
-        { id: 'move-up', label: t('nodes.up'), shortcut: 'U', disabled: !hasSelection, run: () => contextActions.moveSelectedNodes('up') },
-        { id: 'move-down', label: t('nodes.down'), shortcut: 'D', disabled: !hasSelection, run: () => contextActions.moveSelectedNodes('down') },
-        { id: 'move-bottom', label: t('nodes.bottom'), shortcut: 'B', disabled: !hasSelection, run: () => contextActions.moveSelectedNodes('bottom') },
-        { id: 'move-position', label: `${t('nodes.position')}…`, disabled: !hasSelection, run: () => actions.moveSelectedPosition() },
-      ],
-    },
-    {
       id: 'move-group',
       label: t('nodes.moveGroup'),
       disabled: !groups.length,

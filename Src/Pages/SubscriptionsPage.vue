@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import UiButton from '../Components/Material/UiButton.vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ActionMenu, { type ActionMenuItem } from '../Components/Material/ActionMenu.vue'
+import ColumnSettingsDialog from '../Components/Material/ColumnSettingsDialog.vue'
 import PageFeedback from '../Components/Material/PageFeedback.vue'
 import UiCheckbox from '../Components/Material/UiCheckbox.vue'
 import UiIcon from '../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../App/context'
+import { planDragOrder } from '../Composables/movementOrder'
 import type { Dict } from '../Composables/types'
+import { createColumnVisibility } from '../UI/columnPreferences'
 import { usePageRequests } from '../UI/useUiRequests'
 import { vScrollShadow } from '../UI/scrollShadow'
+import { useTableDragSort } from '../UI/tableDragSort'
+import { SUBSCRIPTION_COLUMNS, SUBSCRIPTION_COLUMN_STORAGE_KEY } from '../Features/Subscriptions/subscriptionColumns'
 
 const { t } = useI18n()
 const app = useNovaApp()
@@ -18,11 +23,59 @@ const actions = app.subscriptions.subscriptionsPageActions
 const operations = app.runtime.operations
 const progress = app.state.subscriptionProgress
 const { status } = usePageRequests('subscriptions')
-
+const showColumnSettings = ref(false)
+const {
+  visibleIds: subscriptionVisibleColumns,
+  isVisible: isSubscriptionColumnVisible,
+  setVisible: setSubscriptionVisibleColumns,
+} = createColumnVisibility(SUBSCRIPTION_COLUMNS, SUBSCRIPTION_COLUMN_STORAGE_KEY)
+const subscriptionColumnOptions = computed(() => SUBSCRIPTION_COLUMNS.map((column) => ({
+  id: column.id,
+  label: t(column.labelKey),
+  required: column.required,
+})))
 const rows = computed(() => [...state.subscriptions].sort((a: Dict, b: Dict) => {
   const order = Number(a.sort ?? 0) - Number(b.sort ?? 0)
   return Number.isNaN(order) ? 0 : order
 }))
+const columnWidths: Record<string, number> = {
+  remarks: 140,
+  url: 182,
+  enabled: 94,
+  interval: 138,
+  updated: 136,
+  userAgent: 88,
+  filter: 70,
+  nodes: 68,
+}
+const subscriptionMinWidth = computed(() => 44 + 148
+  + SUBSCRIPTION_COLUMNS.filter((column) => isSubscriptionColumnVisible(column.id))
+    .reduce((width, column) => width + columnWidths[column.id], 0))
+const subscriptionColSpan = computed(() => 2
+  + SUBSCRIPTION_COLUMNS.filter((column) => isSubscriptionColumnVisible(column.id)).length)
+const tableShell = ref<HTMLElement | null>(null)
+const dragSort = useTableDragSort({
+  container: tableShell,
+  rowSelector: '[data-subscription-id]',
+  getVisibleIds: () => rows.value.map((item: Dict) => String(item.id ?? '')),
+  onDrop: (draggedId, targetId, after) => {
+    const order = planDragOrder(
+      rows.value.map((item: Dict) => String(item.id ?? '')),
+      draggedId,
+      targetId,
+      after,
+    )
+    if (order) void actions.reorderSubscriptions(order)
+  },
+})
+const draggingSubscriptionId = dragSort.draggingId
+const dragPlaceholderIndex = dragSort.placeholderIndex
+const dragRowHeight = dragSort.rowHeight
+const isDragSorting = dragSort.isDragging
+const beginSubscriptionDrag = dragSort.begin
+const displayedRows = computed(() => draggingSubscriptionId.value
+  ? rows.value.filter((item: Dict) => String(item.id ?? '') !== draggingSubscriptionId.value)
+  : rows.value)
 const activeOperations = computed(() => {
   const ids = new Set(state.subscriptions.map((item: Dict) => String(item.id ?? '')))
   return operations.value.filter((id) => !id || ids.has(id))
@@ -83,21 +136,23 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
   <section class="page subscriptions-page">
     <header class="page-head page-head-actions-only">
       <div class="page-actions">
-        <UiButton type="button" class="btn btn-filled" @click="actions.openAddSubscription" icon="plus">{{ t('subscriptions.addSubscription') }}
-        </UiButton>
-        <UiButton type="button" class="btn btn-tonal" @click="actions.updateSubscriptions(null, state.subscriptionUseProxy)" icon="refresh">{{ t('subscriptions.updateAll') }}
-        </UiButton>
-        <UiButton
+        <button
           type="button"
-          class="btn btn-outlined"
-          :disabled="!state.selectedGroup"
-          @click="actions.updateSubscriptions(state.selectedGroup || null, state.subscriptionUseProxy)"
-         icon="subscriptions">{{ t('subscriptions.updateSelected') }}
-        </UiButton>
+          class="icon-btn desktop-only"
+          :aria-label="t('subscriptions.columnSettings')"
+          :title="t('subscriptions.columnSettings')"
+          @click="showColumnSettings = true"
+        >
+          <UiIcon name="view-column" />
+        </button>
         <label class="check proxy-toggle">
           <UiCheckbox :model-value="state.subscriptionUseProxy" @change="toggleUseProxy" />
           <span>{{ t('subscriptions.useProxy') }}</span>
         </label>
+        <UiButton type="button" class="btn btn-filled" @click="actions.openAddSubscription" icon="plus">{{ t('subscriptions.addSubscription') }}
+        </UiButton>
+        <UiButton type="button" class="btn btn-tonal" @click="actions.updateSubscriptions(null, state.subscriptionUseProxy)" icon="refresh">{{ t('subscriptions.updateAll') }}
+        </UiButton>
       </div>
     </header>
 
@@ -117,53 +172,87 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
       </UiButton>
     </div>
 
-    <div v-else v-scroll-shadow class="desktop-only table-shell subscriptions-table-shell sticky-actions" tabindex="0">
-      <table class="data-table subscription-table">
+    <div v-else ref="tableShell" v-scroll-shadow class="desktop-only table-shell subscriptions-table-shell sticky-actions" tabindex="0">
+      <table class="data-table subscription-table" :style="{ minWidth: `${subscriptionMinWidth}px` }">
         <caption class="visually-hidden">{{ t('subscriptions.title') }}</caption>
         <thead>
           <tr>
-            <th scope="col">{{ t('subscriptions.name') }}</th>
-            <th scope="col">{{ t('subscriptions.url') }}</th>
-            <th scope="col">{{ t('common.enabled') }}</th>
-            <th scope="col">{{ t('subscriptions.intervalColumn') }}</th>
-            <th scope="col">{{ t('subscriptions.updated') }}</th>
-            <th scope="col">{{ t('subscriptions.userAgent') }}</th>
-            <th scope="col">{{ t('subscriptions.filterColumn') }}</th>
-            <th scope="col" class="cell-number">{{ t('subscriptions.nodesColumn') }}</th>
+            <th class="cell-drag"><span class="visually-hidden">{{ t('subscriptions.dragToSort') }}</span></th>
+            <th scope="col" class="col-remarks">{{ t('subscriptions.name') }}</th>
+            <th v-if="isSubscriptionColumnVisible('url')" scope="col" class="col-url">{{ t('subscriptions.url') }}</th>
+            <th v-if="isSubscriptionColumnVisible('enabled')" scope="col" class="col-enabled">{{ t('common.enabled') }}</th>
+            <th v-if="isSubscriptionColumnVisible('interval')" scope="col" class="col-interval">{{ t('subscriptions.intervalColumn') }}</th>
+            <th v-if="isSubscriptionColumnVisible('updated')" scope="col" class="col-updated">{{ t('subscriptions.updated') }}</th>
+            <th v-if="isSubscriptionColumnVisible('userAgent')" scope="col" class="col-user-agent">{{ t('subscriptions.userAgent') }}</th>
+            <th v-if="isSubscriptionColumnVisible('filter')" scope="col" class="col-filter">{{ t('subscriptions.filterColumn') }}</th>
+            <th v-if="isSubscriptionColumnVisible('nodes')" scope="col" class="cell-number col-nodes">{{ t('subscriptions.nodesColumn') }}</th>
             <th scope="col" class="cell-actions">{{ t('nodes.actions') }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in rows" :key="item.id" :class="{ 'is-current': isCurrent(item) }">
-            <td>
-              <div class="sub-remarks">
-                <span class="sub-remarks-main" :title="item.remarks">{{ item.remarks || '—' }}</span>
-                <span v-if="isCurrent(item)" class="badge badge-primary">{{ t('common.currentGroup') }}</span>
-              </div>
-            </td>
-            <td class="sub-url truncate" :title="item.url">{{ item.url || '—' }}</td>
-            <td><span class="badge" :class="{ 'badge-success': item.enabled }">{{ item.enabled ? t('common.enabled') : t('common.disabled') }}</span></td>
-            <td>{{ intervalText(item) }}</td>
-            <td>
-              <div class="sub-updated">
-                <span :title="updatedText(item)">{{ updatedText(item) }}</span>
-                <span v-if="isUpdating(item)" class="sub-progress" :title="progressText(item)">{{ progressText(item) || t('polish.updating') }}</span>
-              </div>
-            </td>
-            <td class="sub-detail" :title="item.userAgent">{{ item.userAgent || '—' }}</td>
-            <td class="sub-detail" :title="item.filter">{{ item.filter || '—' }}</td>
-            <td class="cell-number">{{ profileCount(item) ?? '—' }}</td>
-            <td class="cell-actions">
-              <div class="sub-row-actions">
-                <UiButton
+          <template v-for="(item, index) in displayedRows" :key="item.id">
+            <tr
+              v-if="isDragSorting && dragPlaceholderIndex === index"
+              class="table-drag-placeholder"
+              data-drag-row-key="__placeholder__"
+              aria-hidden="true"
+            >
+              <td :colspan="subscriptionColSpan">
+                <div class="table-drag-placeholder-box" :style="{ height: `${Math.max(dragRowHeight - 4, 0)}px` }" />
+              </td>
+            </tr>
+            <tr :data-subscription-id="item.id" :data-drag-row-key="item.id" :class="{ 'is-current': isCurrent(item) }">
+              <td class="cell-drag" @click.stop>
+                <button
                   type="button"
-                  class="btn btn-tonal btn-small"
-                  :aria-label="t(actions.subscriptionUpdateMessageKey(item.id, state.subscriptionUseProxy))"
-                  @click="actions.updateSubscription(item.id)"
-                 icon="refresh">{{ t('subscriptions.update') }}
-                </UiButton>
-                <ActionMenu :items="rowMenu(item)" :label="t('nodes.actions')" @select="chooseRowAction(item, $event)" />
-              </div>
+                  class="icon-btn icon-btn-small drag-handle"
+                  :aria-label="t('subscriptions.dragToSort')"
+                  :title="t('subscriptions.dragToSort')"
+                  @pointerdown="beginSubscriptionDrag($event, String(item.id ?? ''))"
+                >
+                  <UiIcon name="drag-handle" :size="16" />
+                </button>
+              </td>
+              <td class="col-remarks">
+                <div class="sub-remarks">
+                  <span class="sub-remarks-main" :title="item.remarks">{{ item.remarks || '—' }}</span>
+                  <span v-if="isCurrent(item)" class="badge badge-primary">{{ t('common.currentGroup') }}</span>
+                </div>
+              </td>
+              <td v-if="isSubscriptionColumnVisible('url')" class="sub-url col-url truncate" :title="item.url">{{ item.url || '—' }}</td>
+              <td v-if="isSubscriptionColumnVisible('enabled')" class="col-enabled"><span class="badge" :class="{ 'badge-success': item.enabled }">{{ item.enabled ? t('common.enabled') : t('common.disabled') }}</span></td>
+              <td v-if="isSubscriptionColumnVisible('interval')" class="col-interval">{{ intervalText(item) }}</td>
+              <td v-if="isSubscriptionColumnVisible('updated')" class="col-updated">
+                <div class="sub-updated">
+                  <span :title="updatedText(item)">{{ updatedText(item) }}</span>
+                  <span v-if="isUpdating(item)" class="sub-progress" :title="progressText(item)">{{ progressText(item) || t('polish.updating') }}</span>
+                </div>
+              </td>
+              <td v-if="isSubscriptionColumnVisible('userAgent')" class="sub-detail col-user-agent" :title="item.userAgent">{{ item.userAgent || '—' }}</td>
+              <td v-if="isSubscriptionColumnVisible('filter')" class="sub-detail col-filter" :title="item.filter">{{ item.filter || '—' }}</td>
+              <td v-if="isSubscriptionColumnVisible('nodes')" class="cell-number col-nodes">{{ profileCount(item) ?? '—' }}</td>
+              <td class="cell-actions">
+                <div class="sub-row-actions">
+                  <UiButton
+                    type="button"
+                    class="btn btn-tonal btn-small"
+                    :aria-label="t(actions.subscriptionUpdateMessageKey(item.id, state.subscriptionUseProxy))"
+                    @click="actions.updateSubscription(item.id)"
+                   icon="refresh">{{ t('subscriptions.update') }}
+                  </UiButton>
+                  <ActionMenu :items="rowMenu(item)" :label="t('nodes.actions')" @select="chooseRowAction(item, $event)" />
+                </div>
+              </td>
+            </tr>
+          </template>
+          <tr
+            v-if="isDragSorting && dragPlaceholderIndex >= displayedRows.length"
+            class="table-drag-placeholder"
+            data-drag-row-key="__placeholder__"
+            aria-hidden="true"
+          >
+            <td :colspan="subscriptionColSpan">
+              <div class="table-drag-placeholder-box" :style="{ height: `${Math.max(dragRowHeight - 4, 0)}px` }" />
             </td>
           </tr>
         </tbody>
@@ -197,6 +286,15 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
         </div>
       </article>
     </div>
+
+    <ColumnSettingsDialog
+      :open="showColumnSettings"
+      :title="t('subscriptions.columnSettings')"
+      :columns="subscriptionColumnOptions"
+      :model-value="subscriptionVisibleColumns"
+      @update:model-value="setSubscriptionVisibleColumns"
+      @close="showColumnSettings = false"
+    />
   </section>
 </template>
 
@@ -208,7 +306,6 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
 }
 .subscriptions-table-shell { max-width: 100%; }
 .subscription-table {
-  min-width: 1064px;
   table-layout: fixed;
 }
 .subscription-table th,
@@ -225,16 +322,32 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
   vertical-align: bottom;
   line-height: 1.3;
 }
-.subscription-table th:nth-child(1) { width: 140px; }
-.subscription-table th:nth-child(2) { width: 182px; }
-.subscription-table th:nth-child(3) { width: 94px; }
-.subscription-table th:nth-child(4) { width: 138px; }
-.subscription-table th:nth-child(5) { width: 136px; }
-.subscription-table th:nth-child(6) { width: 88px; }
-.subscription-table th:nth-child(7) { width: 70px; }
-.subscription-table th:nth-child(8) { width: 68px; }
-.subscription-table th:nth-child(9) { width: 148px; min-width: 148px; }
+.subscription-table .cell-drag {
+  width: 44px;
+  min-width: 44px;
+  padding-inline: 4px;
+  text-align: center;
+}
+.subscription-table .col-remarks { width: 140px; }
+.subscription-table .col-url { width: 182px; }
+.subscription-table .col-enabled { width: 94px; }
+.subscription-table .col-interval { width: 138px; }
+.subscription-table .col-updated { width: 136px; }
+.subscription-table .col-user-agent { width: 88px; }
+.subscription-table .col-filter { width: 70px; }
+.subscription-table .col-nodes { width: 68px; }
+.subscription-table .cell-actions { width: 148px; min-width: 148px; }
 .subscription-table td.cell-actions { padding-inline: var(--nova-space-2); }
+.drag-handle {
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
 .sub-row-actions .icon-btn-small {
   width: 32px;
   height: 32px;
@@ -245,7 +358,7 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
 }
 .sub-remarks { display: flex; min-width: 0; align-items: center; gap: var(--nova-space-2); }
 .sub-remarks-main { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sub-url, .sub-detail { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+.sub-url, .sub-detail { overflow: hidden; text-overflow: ellipsis; }
 .sub-updated { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .sub-updated > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sub-progress { max-width: 220px; overflow: hidden; color: var(--md-sys-color-primary); font-size: var(--md-sys-typescale-label-small-size); text-overflow: ellipsis; white-space: nowrap; }

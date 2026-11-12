@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import NodesToolbar from '../Features/Nodes/NodesToolbar.vue'
 import NodesTable from '../Features/Nodes/NodesTable.vue'
 import NodesMobileList from '../Features/Nodes/NodesMobileList.vue'
 import PageFeedback from '../Components/Material/PageFeedback.vue'
 import ActionMenu, { type ActionMenuItem } from '../Components/Material/ActionMenu.vue'
+import ColumnSettingsDialog from '../Components/Material/ColumnSettingsDialog.vue'
+import UiIcon from '../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../App/context'
 import { useMediaQuery } from '../UI/useMediaQuery'
+import { createColumnVisibility } from '../UI/columnPreferences'
+import { NODE_COLUMNS, NODE_COLUMN_STORAGE_KEY } from '../Features/Nodes/nodeColumns'
 
 const { t } = useI18n()
 const app = useNovaApp()
@@ -16,6 +20,16 @@ const actions = app.nodes.nodesPageActions
 const nodeActions = app.nodes
 const isMobile = useMediaQuery('(max-width: 860px)')
 const selected = computed(() => state.selectedIds.length)
+const showColumnSettings = ref(false)
+const {
+  visibleIds: nodeVisibleColumns,
+  setVisible: setNodeVisibleColumns,
+} = createColumnVisibility(NODE_COLUMNS, NODE_COLUMN_STORAGE_KEY)
+const nodeColumnOptions = computed(() => NODE_COLUMNS.map((column) => ({
+  id: column.id,
+  label: t(column.labelKey),
+  required: column.required,
+})))
 
 const bulkItems = computed<ActionMenuItem[]>(() => [
   { id: 'copy', label: t('nodes.copySelected'), icon: 'copy' },
@@ -46,14 +60,14 @@ function bulkAction(id: string) {
 
 <template>
   <section class="page nodes-page">
-    <NodesToolbar>
+    <NodesToolbar @open-column-settings="showColumnSettings = true">
       <template #feedback>
         <PageFeedback scope="nodes" />
       </template>
     </NodesToolbar>
 
     <div class="desktop-only">
-      <NodesTable />
+      <NodesTable :visible-columns="nodeVisibleColumns" />
     </div>
     <div class="mobile-only">
       <NodesMobileList />
@@ -79,6 +93,15 @@ function bulkAction(id: string) {
         </button>
       </div>
     </div>
+
+    <ColumnSettingsDialog
+      :open="showColumnSettings"
+      :title="t('nodes.columnSettings')"
+      :columns="nodeColumnOptions"
+      :model-value="nodeVisibleColumns"
+      @update:model-value="setNodeVisibleColumns"
+      @close="showColumnSettings = false"
+    />
   </section>
 </template>
 

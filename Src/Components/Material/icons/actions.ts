@@ -34,6 +34,7 @@ export const ACTION_ICONS: Record<string, string[]> = {
   backup: ['M4 7v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7M4 7l8-4 8 4M4 7l8 4 8-4M12 11v8M8 15l4 4 4-4'],
   'dots-vertical': ['M12 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM12 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM12 15.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z'],
   'drag-handle': ['M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01'],
+  'view-column': ['M4 5h16v14H4zM9.33 5v14M14.67 5v14'],
   share: ['M12 16V4M8 8l4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5'],
   'select-all': ['M6 4h2M12 4h2M18 4h2M20 8v2M20 14v2M18 20h2M12 20h2M6 20H4M4 16v-2M4 10V8M9 12l2 2 4-4'],
   pin: ['M9 3h6l-1 6 4 4H6l4-4-1-6ZM12 13v8'],

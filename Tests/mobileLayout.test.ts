@@ -84,13 +84,16 @@ test('mobile node cards keep selection, current state and the full action set', 
   assert.match(cards, /@contextmenu\.prevent/)
 })
 
-test('mobile node toolbar leaves context-menu actions to the shared node menu', async () => {
+test('the node toolbar leaves context-menu actions to the shared node menu on every viewport', async () => {
   const toolbar = await read('Features/Nodes/NodesToolbar.vue')
-  assert.match(toolbar, /const isMobile = useMediaQuery\('\(max-width: 860px\)'\)/)
   assert.match(toolbar, /:items="toolbarTestItems"/)
-  assert.match(toolbar, /const toolbarOnlyIds = new Set\(\['test-group', 'sort-speed'\]\)/)
-  assert.match(toolbar, /v-if="!isMobile"[\s\S]*?:items="organizeItems"/)
-  assert.match(toolbar, /v-if="!isMobile"[\s\S]*?:items="shareItems"/)
+  assert.match(toolbar, /id: 'test-group'[\s\S]*?id: 'sort-speed'/)
+  // Every other test type, delay sorting, stopping a run, organizing and
+  // sharing stay in the shared node context menu on desktop and mobile alike.
+  assert.doesNotMatch(toolbar, /organizeItems|shareItems|isMobile|useMediaQuery/)
+  for (const id of ['tcping', 'realping', 'speedtest', 'udpTest', 'fastRealping', 'mixedtest', 'sort-delay', 'stop-tests']) {
+    assert.doesNotMatch(toolbar, new RegExp(`id: '${id}'`))
+  }
 })
 
 test('mobile subscription cards keep the update action on the update line without a details disclosure', async () => {

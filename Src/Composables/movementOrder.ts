@@ -50,3 +50,38 @@ export function planSelectedPositionMoves(
 
   return moves
 }
+
+/**
+ * Position to send with a single-profile `position` move after one row is
+ * dropped on another. The backend removes the profile first, so the target
+ * index is resolved against the remaining rows. A null result means the drop
+ * would leave the order unchanged.
+ */
+export function planDragPosition(
+  orderedIds: readonly string[],
+  draggedId: string,
+  targetId: string,
+  after: boolean,
+): number | null {
+  const order = planDragOrder(orderedIds, draggedId, targetId, after)
+  if (!order) return null
+  return order.indexOf(draggedId)
+}
+
+/** New id order after dropping one row before/after another. */
+export function planDragOrder(
+  orderedIds: readonly string[],
+  draggedId: string,
+  targetId: string,
+  after: boolean,
+): string[] | null {
+  const from = orderedIds.indexOf(draggedId)
+  const target = orderedIds.indexOf(targetId)
+  if (from < 0 || target < 0 || draggedId === targetId) return null
+  const next = [...orderedIds]
+  next.splice(from, 1)
+  const targetIndex = next.indexOf(targetId)
+  if (targetIndex < 0) return null
+  next.splice(targetIndex + (after ? 1 : 0), 0, draggedId)
+  return next.every((id, index) => id === orderedIds[index]) ? null : next
+}

@@ -34,7 +34,9 @@ Pages are lazy-loaded in `App.vue` and composed from feature modules:
 
 - `Pages/NodesPage.vue` → `Features/Nodes/NodesToolbar`, `NodesTable`, `NodesMobileList`,
   `NodeContextMenu`; shared actions come from `Features/Profiles/useNodeActions.ts`.
+  Column definitions live in `Features/Nodes/nodeColumns.ts`.
 - `Pages/SubscriptionsPage.vue` → `Features/Subscriptions/*` and `SubscriptionModal`.
+  Column definitions live in `Features/Subscriptions/subscriptionColumns.ts`.
 - `Pages/RoutingPage.vue` → `RoutingProfilesPanel`, `RoutingRulesPanel`, `RoutingRawEditor`,
   `RouteModal`, `RuleModal`.
 - `Pages/DnsPage.vue` and `Pages/SettingsPage.vue` → section components for DNS profiles,
@@ -56,6 +58,10 @@ instead of receiving copied stores. All editors mutate the parent-owned reactive
 - `Components/Material/UiCheckbox.vue` — native checkbox with indeterminate sync.
 - `Components/Material/PageFeedback.vue` — page-scoped request errors/loading.
 - `Components/Material/BackendAddressFields.vue` — Backend address/history/test/apply fields.
+- `Components/Material/ColumnSettingsDialog.vue` — shared visible-column picker for both tables.
+- `UI/columnPreferences.ts` — normalizes untrusted column preferences and persists them per table.
+- `UI/tableDragSort.ts` — pointer-driven table reordering: lifted ghost row, dashed placeholder,
+  FLIP shifts for the remaining rows, edge auto-scroll and Escape cancellation.
 - `UI/useUiRequests.ts` — request tracking, scoped busy state, dirty-draft registry and
   cancellation generation.
 - `UI/useDraftState.ts` — presentation-only baselines and unsaved-change prompts.
@@ -84,7 +90,9 @@ Rules:
 2. A Backend change first closes SSE and aborts all pending requests, then changes the base.
 3. Responses and SSE events carry generation/session checks; stale results are ignored.
 4. List mutations update the owning Composable state; feature components only pass selections
-   and submit intents.
+   and submit intents. Profile requests always send `subscriptionId` explicitly: the UI's
+   all-group selection is an empty value, because an omitted parameter means the backend's
+   current group.
 5. Navigation is guarded once by `useAppRoute`; feature components do not add their own
    hash listeners.
 

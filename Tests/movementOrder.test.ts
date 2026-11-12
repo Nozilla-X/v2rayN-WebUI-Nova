@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { planSelectedMoves, planSelectedPositionMoves } from '../Src/Composables/movementOrder.ts'
+import { planDragOrder, planDragPosition, planSelectedMoves, planSelectedPositionMoves } from '../Src/Composables/movementOrder.ts'
 
 function applyMoves(order, selected, direction) {
   const result = [...order]
@@ -79,4 +79,29 @@ test('every planned position move targets an existing row', () => {
       assert.deepEqual(result, expected)
     }
   }
+})
+
+test('a drag drop inserts the row before or after the hovered row', () => {
+  const order = ['A', 'B', 'C', 'D']
+  assert.deepEqual(planDragOrder(order, 'A', 'C', true), ['B', 'C', 'A', 'D'])
+  assert.deepEqual(planDragOrder(order, 'D', 'A', false), ['D', 'A', 'B', 'C'])
+  assert.deepEqual(planDragOrder(order, 'B', 'D', true), ['A', 'C', 'D', 'B'])
+  assert.deepEqual(planDragOrder(order, 'C', 'A', true), ['A', 'C', 'B', 'D'])
+})
+
+test('a drag drop that leaves the order unchanged is not persisted', () => {
+  const order = ['A', 'B', 'C']
+  assert.equal(planDragOrder(order, 'B', 'A', true), null)
+  assert.equal(planDragOrder(order, 'B', 'C', false), null)
+  assert.equal(planDragOrder(order, 'A', 'A', false), null)
+  assert.equal(planDragOrder(order, 'missing', 'A', false), null)
+  assert.equal(planDragPosition(order, 'B', 'A', true), null)
+})
+
+test('the drag position index matches the backend insert-after-removal contract', () => {
+  const order = ['A', 'B', 'C', 'D']
+  assert.equal(planDragPosition(order, 'A', 'C', true), 2)
+  assert.equal(planDragPosition(order, 'D', 'A', false), 0)
+  assert.equal(planDragPosition(order, 'B', 'D', true), 3)
+  assert.equal(planDragPosition(order, 'C', 'A', true), 1)
 })
