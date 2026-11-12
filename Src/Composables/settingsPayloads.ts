@@ -34,7 +34,9 @@ function defaultedNumber(value: unknown): number {
 }
 
 function parseLines(value: unknown): string[] {
-  return String(value ?? '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  // The compact text fields show one comma-separated list, but still accept a
+  // multi-line paste from older builds and the Desktop editor.
+  return String(value ?? '').split(/[\r\n,]+/).map((line) => line.trim()).filter(Boolean)
 }
 
 export function buildSpeedSettingsBody(speedForm: Record<string, unknown>): Record<string, unknown> {

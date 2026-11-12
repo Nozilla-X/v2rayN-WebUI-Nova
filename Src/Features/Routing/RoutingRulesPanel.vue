@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import UiButton from '../../Components/Material/UiButton.vue'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ActionMenu, { type ActionMenuItem } from '../../Components/Material/ActionMenu.vue'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../../App/context'
+import { scrollDisclosureIntoView } from '../../UI/detailsMotion'
 import { usePageRequests } from '../../UI/useUiRequests'
 import { vScrollShadow } from '../../UI/scrollShadow'
 import RoutingRawEditor from './RoutingRawEditor.vue'
@@ -21,6 +22,7 @@ const selectionIndeterminate = computed(() => state.selectedRuleIds.length > 0 &
 const hasSelected = computed(() => state.selectedRuleIds.length > 0)
 const hasUrl = computed(() => Boolean(state.selectedRoute?.url?.trim()))
 const directions = ['top', 'up', 'down', 'bottom'] as const
+const expandedRuleIds = ref<string[]>([])
 
 const importItems = computed<ActionMenuItem[]>(() => [
   { id: 'append', label: t('routing.append'), icon: 'check', checked: state.appendRules },
@@ -81,6 +83,24 @@ function toggleRule(id: string) {
   state.selectedRuleIds = state.selectedRuleIds.includes(id)
     ? state.selectedRuleIds.filter((value: string) => value !== id)
     : [...state.selectedRuleIds, id]
+}
+
+function isRuleExpanded(id: string) {
+  return expandedRuleIds.value.includes(id)
+}
+
+async function toggleRuleDetails(id: string, event?: MouseEvent) {
+  const wasExpanded = isRuleExpanded(id)
+  expandedRuleIds.value = wasExpanded
+    ? expandedRuleIds.value.filter((value) => value !== id)
+    : [...expandedRuleIds.value, id]
+  if (wasExpanded) return
+  // The details grid mounts on the next tick. Reuse the shared disclosure
+  // scroll rule so the new content is revealed instead of staying below the
+  // fold on a long rule list.
+  await nextTick()
+  const card = (event?.currentTarget as HTMLElement | null)?.closest<HTMLElement>('.rule-card')
+  if (card) scrollDisclosureIntoView(card, card.querySelector<HTMLElement>(':scope > .rule-meta'))
 }
 
 function chooseImport(id: string) {
@@ -214,30 +234,38 @@ function chooseRow(rule: Record<string, any>, id: string) {
         v-for="rule in state.routingRules"
         :key="rule.id"
         class="mobile-card rule-card"
-        :class="{ 'is-selected': state.selectedRuleIds.includes(rule.id) }"
+        :class="{ 'is-selected': state.selectedRuleIds.includes(rule.id), 'is-expanded': isRuleExpanded(rule.id) }"
         :aria-busy="state.deletingRuleId === rule.id"
+        @click="toggleRuleDetails(rule.id, $event)"
       >
         <div class="mobile-card-head">
-          <span @click.stop>
+          <span class="mobile-card-check" @click.stop>
             <UiCheckbox :model-value="state.selectedRuleIds.includes(rule.id)" :aria-label="rule.remarks || fallbackName(rule)" @change="toggleRule(rule.id)" />
           </span>
-          <div class="mobile-card-title">
+          <button
+            type="button"
+            class="mobile-card-title rule-card-toggle"
+            :aria-expanded="isRuleExpanded(rule.id)"
+            :aria-controls="`rule-details-${rule.id}`"
+            @click.stop="toggleRuleDetails(rule.id, $event)"
+          >
             <strong>{{ rule.remarks || fallbackName(rule) }}</strong>
-            <small>{{ rule.ruleType || t('routing.ruleType') }} · {{ rule.outboundTag || t('routing.outboundTag') }}</small>
-          </div>
-          <span class="status-dot" :class="rule.enabled === false ? '' : 'is-on'" :title="rule.enabled === false ? t('common.disabled') : t('common.enabled')"></span>
+            <small>
+              <span class="rule-card-subtitle">{{ rule.ruleType || t('routing.ruleType') }} · {{ rule.outboundTag || t('routing.outboundTag') }}</span>
+              <UiIcon name="chevron-down" :size="18" class="rule-card-chevron" />
+            </small>
+          </button>
+          <span class="badge rule-status" :class="{ 'badge-success': rule.enabled !== false }">
+            {{ rule.enabled === false ? t('common.disabled') : t('common.enabled') }}
+          </span>
           <span @click.stop>
             <ActionMenu :items="rowMenu(rule)" :label="t('nodes.actions')" @select="chooseRow(rule, $event)" />
           </span>
         </div>
-        <div class="meta-grid rule-meta">
+        <div v-if="isRuleExpanded(rule.id)" :id="`rule-details-${rule.id}`" class="meta-grid rule-meta">
           <div v-for="field in metaFields(rule)" :key="field" class="meta-item">
             <small>{{ t(`routing.${field}`) }}</small>
             <strong>{{ field === 'port' || field === 'network' ? (rule[field] || '—') : values(rule, field) }}</strong>
-          </div>
-          <div class="meta-item">
-            <small>{{ t('routing.status') }}</small>
-            <strong>{{ rule.enabled === false ? t('common.disabled') : t('common.enabled') }}</strong>
           </div>
           <div class="meta-item field-wide">
             <small>{{ t('routing.matchers') }}</small>
@@ -359,14 +387,87 @@ function chooseRow(rule: Record<string, any>, id: string) {
   text-overflow: ellipsis;
 }
 
+.rule-card {
+  cursor: pointer;
+}
+
+.rule-status {
+  flex: 0 0 auto;
+}
+
+/* The title is the keyboard-operable disclosure control; tapping anywhere on
+   the card outside the checkbox/menu toggles the same read-only detail block. */
+.rule-card-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rule-card-toggle:focus-visible {
+  outline: var(--nova-focus-ring);
+  outline-offset: 3px;
+  border-radius: var(--md-sys-shape-corner-small);
+}
+
+.rule-card-toggle small {
+  display: flex;
+  align-items: center;
+  gap: var(--nova-space-1);
+}
+
+.rule-card-subtitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rule-card-chevron {
+  flex: 0 0 auto;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized);
+}
+
+.rule-card.is-expanded .rule-card-chevron {
+  transform: rotate(180deg);
+}
+
 .rule-meta {
   padding-top: var(--nova-space-2);
   border-top: 1px solid var(--nova-color-divider);
+  animation: rule-details-enter var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+@keyframes rule-details-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .rule-meta .meta-item strong {
   font-size: var(--md-sys-typescale-body-small-size);
   font-weight: var(--md-sys-typescale-weight-regular);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rule-card-chevron {
+    transition: none;
+  }
+
+  .rule-meta {
+    animation: none;
+  }
 }
 
 @media (max-width: 860px) {

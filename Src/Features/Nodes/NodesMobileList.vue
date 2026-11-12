@@ -2,7 +2,6 @@
 import UiButton from '../../Components/Material/UiButton.vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ActionMenu, { type ActionMenuItem } from '../../Components/Material/ActionMenu.vue'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../../App/context'
@@ -13,55 +12,8 @@ const state = app.nodes.nodesPageState
 const actions = app.nodes.nodesPageActions
 const showIp = computed(() => Boolean(state.showIpInfoColumn))
 
-function menuFor(profile: Record<string, any>): ActionMenuItem[] {
-  const id = profile.indexId
-  return [
-    { id: 'select', label: profile.isCurrent ? t('nodes.current') : t('nodes.switch'), icon: 'check', disabled: profile.isCurrent },
-    { id: 'edit', label: t('common.edit'), icon: 'edit' },
-    { id: 'copy', label: t('nodes.copySelected'), icon: 'copy' },
-    { id: 'delete', label: t('common.delete'), icon: 'delete', danger: true },
-    { id: 'sep-test', separator: true },
-    { id: 'tcping', label: t('nodes.tcping') },
-    { id: 'realping', label: t('nodes.realping') },
-    { id: 'speedtest', label: t('nodes.speedtest') },
-    { id: 'udpTest', label: t('nodes.udp') },
-    { id: 'fastRealping', label: t('nodes.fastRealping') },
-    { id: 'mixedtest', label: t('nodes.mixedtest') },
-    { id: 'sep-share', separator: true },
-    { id: 'share', label: t('nodes.shareProfile'), icon: 'share' },
-    { id: 'copy-link', label: t('nodes.exportShareLinkClipboard'), icon: 'clipboard' },
-    { id: 'export-config', label: t('nodes.exportFullConfig'), icon: 'file' },
-  ].map((item) => item.id && !item.separator ? { ...item, id: `${item.id}:${id}` } : item)
-}
-
-function choose(profile: Record<string, any>, value: string) {
-  const index = value.lastIndexOf(':')
-  const action = index >= 0 ? value.slice(0, index) : value
-  const id = profile.indexId
-  if (action === 'select') void actions.selectProfile(profile)
-  else if (action === 'edit') void app.profiles.openEditProfile(profile)
-  else if (action === 'copy') void actions.runProfileAction('copy', [id])
-  else if (action === 'delete') void actions.runProfileAction('delete', [id])
-  else if (['tcping', 'realping', 'speedtest', 'udpTest', 'fastRealping', 'mixedtest'].includes(action)) {
-    void actions.startSpeedTest(action, [id])
-  } else if (action === 'share') app.nodes.nodesPageActions.shareProfile(id)
-  else if (action === 'copy-link') void copyShareLink(id)
-  else if (action === 'export-config') app.nodes.nodesPageActions.exportProfileConfig(id)
-}
-
-async function copyShareLink(id: string) {
-  const previous = [...state.selectedIds]
-  state.selectedIds = [id]
-  try { app.nodes.nodesPageActions.exportShareLinksToClipboard() }
-  finally { state.selectedIds = previous }
-}
-
-function selectCard(event: MouseEvent, profile: Record<string, any>) {
-  if (event.detail > 1) {
-    void actions.selectProfile(profile)
-    return
-  }
-  actions.focusProfile(event, profile)
+function selectCard(profile: Record<string, any>) {
+  void actions.selectProfile(profile)
 }
 </script>
 
@@ -73,11 +25,11 @@ function selectCard(event: MouseEvent, profile: Record<string, any>) {
       class="mobile-card"
       :class="{ 'is-current': profile.isCurrent, 'is-selected': state.selectedIds.includes(profile.indexId) }"
       :data-profile-id="profile.indexId"
-      @click="selectCard($event, profile)"
+      @click="selectCard(profile)"
       @contextmenu.prevent
     >
       <div class="mobile-card-head">
-        <span @click.stop>
+        <span class="mobile-card-check" @click.stop>
           <UiCheckbox
             :model-value="state.selectedIds.includes(profile.indexId)"
             :aria-label="profile.remarks || profile.address"
@@ -93,11 +45,15 @@ function selectCard(event: MouseEvent, profile: Record<string, any>) {
         </div>
         <span class="badge badge-primary protocol-code">{{ profile.protocol }}</span>
         <span @click.stop>
-          <ActionMenu
-            :items="menuFor(profile)"
-            :label="t('nodes.actions')"
-            @select="choose(profile, $event)"
-          />
+          <button
+            type="button"
+            class="icon-btn icon-btn-small"
+            :aria-label="t('nodes.actions')"
+            :title="t('nodes.actions')"
+            @click.stop="actions.openContext($event, profile)"
+          >
+            <UiIcon name="dots-vertical" />
+          </button>
         </span>
       </div>
 

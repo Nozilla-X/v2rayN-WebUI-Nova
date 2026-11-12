@@ -19,6 +19,14 @@ test('feedback keeps the bounded Toast queue, deduplication and confirmation ord
   feedback.showError({ code: 'profile_group_empty', data: { detail: 'fixture' } })
   assert.equal(feedback.toasts.value.at(-1).message, 'nodes.groupGenerationEmpty: fixture')
 
+  // A persistent operation status is not evicted by a burst of regular notices.
+  feedback.reset()
+  const persistentId = feedback.showPersistentNotice('testing')
+  for (const message of ['a', 'b', 'c', 'd', 'e']) feedback.showNotice(message)
+  assert.equal(feedback.toasts.value.length, 4)
+  assert.equal(feedback.toasts.value.some(toast => toast.id === persistentId), true)
+  feedback.reset()
+
   const first = feedback.confirmDestructive('first')
   const second = feedback.confirmDestructive('second')
   assert.equal(feedback.activeConfirmation.value.message, 'first')

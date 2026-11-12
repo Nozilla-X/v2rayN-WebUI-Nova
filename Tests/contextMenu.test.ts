@@ -17,6 +17,10 @@ test('the node context menu nests secondary actions and Escape closes one layer 
   assert.match(menu, /class="menu-item submenu-trigger"/)
   assert.match(menu, /class="menu-popup context-submenu"/)
   assert.match(menu, /@menu-escape="closeSubmenu\(true\)"/)
+  // Touch browsers synthesize mouseenter before click; only open on hover when
+  // the device actually supports hover, otherwise the tap opens and closes.
+  assert.match(menu, /matchMedia\('\(hover: hover\)'\)/)
+  assert.match(menu, /@media \(max-width: 860px\)\s*\{[\s\S]*?\.context-menu \.menu-shortcut[\s\S]*?\.context-submenu \.menu-shortcut[\s\S]*?display:\s*none/)
   assert.match(shortcuts, /querySelector<HTMLElement>\('\.context-submenu'\)/)
   assert.match(shortcuts, /submenu\.dispatchEvent\(new Event\('menu-escape'/)
 })

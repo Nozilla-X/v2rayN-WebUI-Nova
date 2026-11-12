@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import UiIcon from './UiIcon.vue'
+import { vDetailsMotion } from '../../UI/detailsMotion'
 
 withDefaults(defineProps<{
   summary: string
@@ -9,13 +10,13 @@ withDefaults(defineProps<{
 </script>
 
 <template>
-  <details class="ui-disclosure" :open="open">
+  <details v-details-motion class="ui-disclosure" :open="open">
     <summary>
       <span class="disclosure-title">{{ summary }}</span>
       <small v-if="hint" class="disclosure-hint">{{ hint }}</small>
       <UiIcon class="disclosure-chevron" name="chevron-down" :size="20" />
     </summary>
-    <div class="disclosure-body">
+    <div class="disclosure-body ui-details-content">
       <slot />
     </div>
   </details>

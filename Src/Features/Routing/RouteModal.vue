@@ -4,6 +4,7 @@ import { computed, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppDialog from '../../Components/Material/AppDialog.vue'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
+import { vDetailsMotion } from '../../UI/detailsMotion'
 import { useNovaApp } from '../../App/context'
 
 const { t } = useI18n()
@@ -132,9 +133,9 @@ import UiSelect from '../../Components/Material/UiSelect.vue'
         </div>
       </section>
 
-      <details class="advanced-json">
+      <details v-details-motion class="advanced-json">
         <summary>{{ t('routing.advancedJson') }}</summary>
-        <div class="advanced-body">
+        <div class="advanced-body ui-details-content">
           <p class="field-hint">{{ t('routing.routeAdvancedHint') }}</p>
           <label class="field field-wide">
             <span class="field-label">{{ t('common.rawJson') }}</span>

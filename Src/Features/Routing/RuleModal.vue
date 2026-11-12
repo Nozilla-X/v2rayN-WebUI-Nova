@@ -6,6 +6,7 @@ import AppDialog from '../../Components/Material/AppDialog.vue'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
 import UiSelect from '../../Components/Material/UiSelect.vue'
 import UiTextField from '../../Components/Material/UiTextField.vue'
+import { vDetailsMotion } from '../../UI/detailsMotion'
 import { useNovaApp } from '../../App/context'
 
 const { t } = useI18n()
@@ -179,9 +180,9 @@ function submit() {
         </div>
       </section>
 
-      <details class="advanced-json">
+      <details v-details-motion class="advanced-json">
         <summary>{{ t('routing.advancedJson') }}</summary>
-        <div class="advanced-body">
+        <div class="advanced-body ui-details-content">
           <p class="field-hint">{{ t('routing.ruleJsonHint') }}</p>
           <UiTextField
             v-model="state.ruleAdvancedJson"

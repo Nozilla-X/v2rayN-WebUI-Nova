@@ -186,21 +186,13 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
           <span v-if="profileCount(item) !== null" class="badge">{{ nodeCountText(item) }}</span>
         </div>
         <div class="subscription-update-line">
-          <span>{{ t('subscriptions.updated') }}: {{ updatedText(item) }}</span>
-          <span v-if="isUpdating(item)" class="subscription-progress" role="status" :title="progressText(item)">
-            <span class="status-dot is-on" />{{ progressText(item) || t('polish.updating') }}
-          </span>
-        </div>
-        <details class="disclosure subscription-details">
-          <summary>{{ t('subscriptions.details') }}<UiIcon name="chevron-down" :size="16" /></summary>
-          <dl class="subscription-meta">
-            <div v-if="item.userAgent"><dt>{{ t('subscriptions.userAgent') }}</dt><dd>{{ item.userAgent }}</dd></div>
-            <div v-if="item.filter"><dt>{{ t('subscriptions.filter') }}</dt><dd>{{ item.filter }}</dd></div>
-            <div v-if="item.sort !== undefined && item.sort !== null"><dt>{{ t('subscriptions.sort') }}</dt><dd>{{ item.sort }}</dd></div>
-          </dl>
-        </details>
-        <div class="mobile-card-actions">
-          <UiButton type="button" class="btn btn-tonal btn-small" @click="actions.updateSubscription(item.id)" icon="refresh">{{ t(actions.subscriptionUpdateMessageKey(item.id, state.subscriptionUseProxy)) }}
+          <div class="subscription-update-copy">
+            <span>{{ t('subscriptions.updated') }}: {{ updatedText(item) }}</span>
+            <span v-if="isUpdating(item)" class="subscription-progress" role="status" :title="progressText(item)">
+              <span class="status-dot is-on" />{{ progressText(item) || t('polish.updating') }}
+            </span>
+          </div>
+          <UiButton type="button" class="btn btn-tonal btn-small subscription-update-button" @click="actions.updateSubscription(item.id)" icon="refresh">{{ t(actions.subscriptionUpdateMessageKey(item.id, state.subscriptionUseProxy)) }}
           </UiButton>
         </div>
       </article>
@@ -261,18 +253,19 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
 .subscription-card { gap: var(--nova-space-3); }
 .subscription-card .mobile-card-head { align-items: center; }
 .subscription-card .mobile-card-title small { max-width: 100%; }
-.subscription-update-line { display: grid; gap: var(--nova-space-1); color: var(--md-sys-color-on-surface-variant); font-size: var(--md-sys-typescale-body-small-size); overflow-wrap: anywhere; }
+.subscription-update-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nova-space-2);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+}
+.subscription-update-copy { display: grid; min-width: 0; gap: var(--nova-space-1); overflow-wrap: anywhere; }
+.subscription-update-button { flex: 0 0 auto; white-space: nowrap; }
 .subscription-progress { display: flex; align-items: flex-start; gap: var(--nova-space-2); color: var(--md-sys-color-primary); }
 .subscription-progress .status-dot { margin-top: 5px; }
-.subscription-details > summary { display: flex; min-height: var(--nova-touch-target); align-items: center; justify-content: space-between; color: var(--md-sys-color-primary); cursor: pointer; list-style: none; }
-.subscription-details > summary::-webkit-details-marker { display: none; }
-.subscription-details > summary .ui-icon { transition: transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard); }
-.subscription-details[open] > summary .ui-icon { transform: rotate(180deg); }
-.subscription-meta { display: grid; gap: var(--nova-space-2); margin: 0; }
-.subscription-meta > div { display: grid; gap: var(--nova-space-1); }
-.subscription-meta dt { color: var(--md-sys-color-on-surface-variant); font-size: var(--md-sys-typescale-label-small-size); }
-.subscription-meta dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
-.mobile-card-actions { flex-wrap: wrap; justify-content: flex-start; }
 /* Below desktop width the table scrolls; let the data columns win the first
    screen instead of covering them with a pinned action column. */
 @media (max-width: 1200px) {
@@ -286,15 +279,6 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
 @media (max-width: 860px) {
   .page-actions { justify-content: flex-end; }
   .proxy-toggle { min-height: var(--nova-touch-target); }
-  .mobile-card-actions .btn {
-    min-height: var(--nova-touch-target);
-    max-width: 100%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .subscription-details > summary .ui-icon {
-    transition: none;
-  }
+  .subscription-update-button { min-height: var(--nova-touch-target); }
 }
 </style>

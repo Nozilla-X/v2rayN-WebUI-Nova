@@ -40,8 +40,8 @@ export function useSettings(options: ApiServices & {
     const core = settings.value.core || {}
     coreForm.value = {
       ...core,
-      fragmentLengthsText: (core.fragmentLengths || []).join('\n'),
-      fragmentDelaysText: (core.fragmentDelays || []).join('\n'),
+      fragmentLengthsText: (core.fragmentLengths || []).join(', '),
+      fragmentDelaysText: (core.fragmentDelays || []).join(', '),
     }
     appForm.value = { ...(settings.value.app || {}) }
     speedForm.value = { ...(settings.value.speedTest || {}) }
