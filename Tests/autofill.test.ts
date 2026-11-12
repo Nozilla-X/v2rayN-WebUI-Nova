@@ -33,7 +33,10 @@ test('session forms sync live field values before validation', async () => {
   assert.match(field, /@focusout="onInput"/)
   assert.match(field, /addEventListener\('focus', sync, true\)/)
   assert.match(field, /addEventListener\('blur', sync, true\)/)
+  assert.match(field, /addEventListener\('change', sync, true\)/)
   assert.match(field, /defineExpose\(\{ syncFromDom \}\)/)
+  assert.match(field, /function syncFromDom\(\): string \{\s*const raw = readFieldValue\(field\.value\)/)
+  assert.match(field, /function onInput\(\) \{\s*syncFromDom\(\)/)
   assert.match(field, /if \(field\.value && field\.value\.value !== raw\) field\.value\.value = raw/)
   assert.match(field, /raw === '' && \(props\.modelValue === null \|\| props\.modelValue === undefined\)/)
 
@@ -59,4 +62,18 @@ test('session forms sync live field values before validation', async () => {
   const setupSubmit = screen.match(/function submitSetup\(\) \{([\s\S]*?)\n\}/)?.[1] ?? ''
   assert.ok(loginSubmit.indexOf('syncLoginKey()') < loginSubmit.indexOf('actions.loginToBackend()'))
   assert.ok(setupSubmit.indexOf('syncSetupKeys()') < setupSubmit.indexOf('actions.configureAndRemember()'))
+
+  // The sync helpers must actually read the live shadow control; a rename or an
+  // empty body would otherwise satisfy the call-site checks above.
+  const syncLogin = screen.match(/function syncLoginKey\(\) \{([\s\S]*?)\n\}/)?.[1] ?? ''
+  const syncSetup = screen.match(/function syncSetupKeys\(\) \{([\s\S]*?)\n\}/)?.[1] ?? ''
+  assert.match(syncLogin, /loginKeyField\.value\?\.syncFromDom\(\)/)
+  assert.match(syncSetup, /setupKeyField\.value\?\.syncFromDom\(\)/)
+  assert.match(syncSetup, /setupConfirmKeyField\.value\?\.syncFromDom\(\)/)
+
+  // Enter must commit the shadow value before native validation can clear it.
+  const enterHandler = screen.match(/function submitOnEnter\([\s\S]*?\n\}/)?.[0] ?? ''
+  assert.ok(enterHandler.includes('sync()'))
+  assert.ok(enterHandler.indexOf('sync()') < enterHandler.indexOf('form.reportValidity()'))
+  assert.ok(enterHandler.indexOf('form.reportValidity()') < enterHandler.indexOf('submit()'))
 })
