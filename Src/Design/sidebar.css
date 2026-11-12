@@ -178,14 +178,6 @@
   background: var(--md-sys-color-surface);
   color: var(--md-sys-color-on-surface);
   text-align: left;
-  transition:
-    background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-    border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-}
-
-.sidebar-status:hover {
-  border-color: color-mix(in srgb, var(--md-sys-color-outline) 54%, transparent);
-  background: var(--md-sys-color-surface-container);
 }
 
 .sidebar-status .status-dot {
@@ -198,15 +190,6 @@
   gap: 0;
 }
 
-.sidebar-status-copy strong {
-  overflow: hidden;
-  font-size: var(--md-sys-typescale-label-medium-size);
-  font-weight: 600;
-  line-height: var(--md-sys-typescale-label-medium-line-height);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .sidebar-status-copy small {
   overflow: hidden;
   color: var(--md-sys-color-on-surface-variant);
@@ -214,11 +197,6 @@
   line-height: var(--md-sys-typescale-label-small-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sidebar-status-arrow {
-  margin-left: auto;
-  color: var(--md-sys-color-on-surface-variant);
 }
 
 .sidebar-rail-toggle {
@@ -239,8 +217,7 @@
 .app-shell.is-railed .sidebar-brand-copy,
 .app-shell.is-railed .sidebar-label,
 .app-shell.is-railed .nav-item-text,
-.app-shell.is-railed .sidebar-status-copy,
-.app-shell.is-railed .sidebar-status-arrow {
+.app-shell.is-railed .sidebar-status-copy {
   display: none;
 }
 
@@ -309,11 +286,6 @@
   .sidebar-label,
   .nav-item-text,
   .sidebar-status-copy {
-    display: none;
-  }
-
-  /* UiIcon carries a scoped display rule, so hide it with higher specificity. */
-  .sidebar-status > .ui-icon.sidebar-status-arrow {
     display: none;
   }
 
