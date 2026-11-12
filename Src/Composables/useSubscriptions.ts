@@ -123,6 +123,35 @@ export function useSubscriptions(options: ApiServices & {
     } catch (error) { options.showError(error) }
   }
 
+  /**
+   * Subscriptions have no move endpoint. Persist the new visual order by
+   * renumbering `sort`; the API preserves omitted optional fields, so remarks
+   * and url are the only required values sent with each update.
+   */
+  async function reorderSubscriptions(orderedIds: readonly string[]) {
+    const byId = new Map(subscriptions.value.map((item: Dict) => [String(item.id ?? ''), item]))
+    if (orderedIds.length !== subscriptions.value.length || orderedIds.some((id) => !byId.has(id))) return
+    let changed = 0
+    try {
+      for (let index = 0; index < orderedIds.length; index += 1) {
+        const item = byId.get(orderedIds[index]) as Dict
+        if (Number(item.sort ?? 0) === index) continue
+        await options.request(`/api/subscriptions/${encodeURIComponent(orderedIds[index])}`, {
+          method: 'PUT',
+          body: { remarks: item.remarks, url: item.url, sort: index },
+        })
+        changed += 1
+      }
+      if (changed) {
+        await loadSubscriptions()
+        options.showNotice(t('common.saveDone'))
+      }
+    } catch (error) {
+      await loadSubscriptions()
+      options.showError(error)
+    }
+  }
+
   async function shareSubscription(item: Dict) {
     try {
       const share = await options.data(`/api/subscriptions/${encodeURIComponent(item.id)}/share`)
@@ -153,7 +182,7 @@ export function useSubscriptions(options: ApiServices & {
   return {
     subscriptions, subscriptionUseProxy, showSubscriptionForm, loadSubscriptions, loadEditorOptions, subscriptionsPageState, subscriptionModalState,
     subscriptionUpdateMessageKey, reset,
-    subscriptionsPageActions: { formatDate, subscriptionUpdateMessageKey, updateSubscriptions, openAddSubscription, updateSubscription, shareSubscription, openEditSubscription, deleteSubscription },
+    subscriptionsPageActions: { formatDate, subscriptionUpdateMessageKey, updateSubscriptions, reorderSubscriptions, openAddSubscription, updateSubscription, shareSubscription, openEditSubscription, deleteSubscription },
     subscriptionModalActions: { saveSubscription },
   }
 }

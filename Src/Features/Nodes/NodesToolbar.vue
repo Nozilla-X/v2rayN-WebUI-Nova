@@ -4,19 +4,15 @@ import { useI18n } from 'vue-i18n'
 import ActionMenu, { type ActionMenuItem } from '../../Components/Material/ActionMenu.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../../App/context'
-import { useMediaQuery } from '../../UI/useMediaQuery'
 import { usePageRequests } from '../../UI/useUiRequests'
 
 const { t } = useI18n()
 const app = useNovaApp()
 const state = app.nodes.nodesPageState
 const actions = app.nodes.nodesPageActions
-const runtime = app.runtime
-const isMobile = useMediaQuery('(max-width: 860px)')
+const emit = defineEmits<{ openColumnSettings: [] }>()
 const { run } = usePageRequests('nodes')
 
-const testing = computed(() => runtime.operations.value.includes('speedtest'))
-const allSelected = computed(() => state.selectedIds.length > 0 && state.allVisibleSelected)
 const groupChipsElement = ref<HTMLElement | null>(null)
 const groupCanScrollLeft = ref(false)
 const groupCanScrollRight = ref(false)
@@ -58,74 +54,13 @@ const addItems = computed<ActionMenuItem[]>(() => [
   { id: 'import-profiles', label: t('nodes.importNodes'), icon: 'import' },
 ])
 
-const testItems = computed<ActionMenuItem[]>(() => [
-  { id: 'tcping', label: t('nodes.tcping'), shortcut: '1' },
-  { id: 'realping', label: t('nodes.realping'), shortcut: '2' },
-  { id: 'speedtest', label: t('nodes.speedtest'), shortcut: '3' },
-  { id: 'udpTest', label: t('nodes.udp'), shortcut: '4' },
-  { id: 'fastRealping', label: t('nodes.fastRealping'), shortcut: '5' },
-  { id: 'mixedtest', label: t('nodes.mixedtest'), shortcut: '6' },
-  { id: 'sep-test', separator: true },
+// Desktop and mobile share the node context menu for test types, delay sorting,
+// stopping a run, organizing and sharing. The toolbar only owns the two test
+// actions that menu does not provide.
+const toolbarTestItems = computed<ActionMenuItem[]>(() => [
   { id: 'test-group', label: t('nodes.testGroup'), icon: 'activity', disabled: !state.selectedGroup },
-  { id: 'sep-sort', separator: true },
-  { id: 'sort-delay', label: `${t('nodes.sortByTestResults')} · ${t('nodes.delay')}`, icon: 'sort' },
   { id: 'sort-speed', label: `${t('nodes.sortByTestResults')} · ${t('nodes.speed')}`, icon: 'sort' },
-  { id: 'sep-stop', separator: true },
-  { id: 'stop-tests', label: t('nodes.stopTest'), icon: 'stop', disabled: !testing.value },
 ])
-
-// The mobile card menu is the shared NodeContextMenu. Test types, delay sorting
-// and stopping a run already live there, so the toolbar only keeps the two test
-// actions the context menu does not own.
-const toolbarTestItems = computed<ActionMenuItem[]>(() => {
-  if (!isMobile.value) return testItems.value
-  const toolbarOnlyIds = new Set(['test-group', 'sort-speed'])
-  return testItems.value.filter((item) => !item.separator && toolbarOnlyIds.has(item.id || ''))
-})
-
-const organizeItems = computed<ActionMenuItem[]>(() => {
-  const disabled = state.selectedIds.length === 0
-  const items: ActionMenuItem[] = [
-    { id: 'copy', label: t('nodes.copySelected'), icon: 'copy', disabled },
-    { id: 'delete', label: t('nodes.removeSelected'), icon: 'delete', danger: true, disabled },
-    { id: 'position', label: `${t('nodes.position')}…`, icon: 'drag-handle', disabled },
-    { id: 'sep-move', separator: true },
-    { id: 'move-top', label: t('nodes.top'), shortcut: 'T', disabled },
-    { id: 'move-up', label: t('nodes.up'), shortcut: 'U', disabled },
-    { id: 'move-down', label: t('nodes.down'), shortcut: 'D', disabled },
-    { id: 'move-bottom', label: t('nodes.bottom'), shortcut: 'B', disabled },
-    { id: 'sep-dedupe', separator: true },
-    { id: 'deduplicate', label: t('nodes.deduplicate'), icon: 'layers' },
-    { id: 'remove-invalid', label: t('nodes.removeInvalid'), icon: 'delete' },
-    { id: 'sep-groups', separator: true },
-    { id: 'generate-all', label: `${t('nodes.generatePolicyGroups')} · ${t('nodes.allProfiles')}`, icon: 'folder', disabled: !state.selectedGroup },
-    { id: 'generate-regions', label: `${t('nodes.generatePolicyGroups')} · ${t('nodes.generateRegionGroups')}`, icon: 'globe', disabled: !state.selectedGroup },
-    { id: 'sep-targets', separator: true },
-    { id: 'move-group-label', label: t('nodes.moveGroup'), icon: 'folder', disabled: true },
-  ]
-  for (const group of state.groups) {
-    items.push({
-      id: `move-group:${group.id || ''}`,
-      label: `  ${group.name || t('common.allGroups')}`,
-      disabled,
-    })
-  }
-  return items
-})
-
-const shareItems = computed<ActionMenuItem[]>(() => {
-  const disabled = state.selectedIds.length === 0
-  return [
-    { id: 'share', label: t('nodes.shareProfile'), icon: 'share', disabled, shortcut: 'S' },
-    { id: 'share-links', label: t('nodes.exportShareLinkClipboard'), icon: 'clipboard', disabled },
-    { id: 'share-base64', label: t('nodes.exportShareLinkBase64'), icon: 'clipboard', disabled },
-    { id: 'inner-uri', label: t('nodes.exportInnerUri'), icon: 'link', disabled },
-    { id: 'sep-export', separator: true },
-    { id: 'full-config', label: t('nodes.exportFullConfig'), icon: 'file', disabled },
-    { id: 'full-config-copy', label: t('nodes.exportFullConfigClipboard'), icon: 'copy', disabled },
-    { id: 'custom-export', label: `${t('nodes.customExport')}…`, icon: 'export', disabled },
-  ]
-})
 
 function chooseAdd(id: string) {
   if (id === 'add-profile') void actions.openAddProfile()
@@ -133,39 +68,8 @@ function chooseAdd(id: string) {
 }
 
 function chooseTest(id: string) {
-  if (['tcping', 'realping', 'speedtest', 'udpTest', 'fastRealping', 'mixedtest'].includes(id)) {
-    void actions.startSpeedTest(id)
-  } else if (id === 'test-group') void actions.runProfileAction('test-group')
-  else if (id === 'sort-delay') void actions.sortProfiles('DelayVal')
+  if (id === 'test-group') void actions.runProfileAction('test-group')
   else if (id === 'sort-speed') void actions.sortProfiles('SpeedVal')
-  else if (id === 'stop-tests') void actions.stopSpeedTests()
-}
-
-function chooseOrganize(id: string) {
-  if (id.startsWith('move-group:')) {
-    void actions.moveSelectedToGroup(id.slice('move-group:'.length))
-    return
-  }
-  if (id.startsWith('move-') && ['move-top', 'move-up', 'move-down', 'move-bottom'].includes(id)) {
-    void actions.moveSelected(id.slice('move-'.length))
-    return
-  }
-  if (id === 'copy' || id === 'delete' || id === 'deduplicate' || id === 'remove-invalid') {
-    void actions.runProfileAction(id)
-  } else if (id === 'position') void actions.moveSelectedPosition()
-  else if (id === 'generate-all') void actions.generateGroups(false)
-  else if (id === 'generate-regions') void actions.generateGroups(true)
-}
-
-function chooseShare(id: string) {
-  const nodeActions = app.nodes.nodesPageActions
-  if (id === 'share') nodeActions.shareSelected()
-  else if (id === 'share-links') nodeActions.exportShareLinksToClipboard()
-  else if (id === 'share-base64') nodeActions.exportShareLinksBase64()
-  else if (id === 'inner-uri') nodeActions.exportInnerUris()
-  else if (id === 'full-config') nodeActions.exportFullConfig()
-  else if (id === 'full-config-copy') nodeActions.exportFullConfigToClipboard()
-  else if (id === 'custom-export') void actions.exportSelected()
 }
 
 function selectGroup(event: MouseEvent, group: Record<string, any>) {
@@ -206,6 +110,18 @@ function locateCurrent() {
   <div class="nodes-toolbar">
     <div class="page-toolbar">
       <div class="toolbar-actions">
+        <button type="button" class="icon-btn desktop-only" :aria-label="t('polish.locateCurrent')" :title="t('polish.locateCurrent')" @click="locateCurrent">
+          <UiIcon name="check" />
+        </button>
+        <button
+          type="button"
+          class="icon-btn desktop-only"
+          :aria-label="t('nodes.columnSettings')"
+          :title="t('nodes.columnSettings')"
+          @click="emit('openColumnSettings')"
+        >
+          <UiIcon name="view-column" />
+        </button>
         <form class="search-field nodes-search" role="search" @submit.prevent="submitFilter">
           <UiIcon name="search" :size="18" />
           <input
@@ -226,9 +142,6 @@ function locateCurrent() {
             <UiIcon name="close" :size="16" />
           </button>
         </form>
-        <button type="button" class="icon-btn desktop-only" :aria-label="t('polish.locateCurrent')" :title="t('polish.locateCurrent')" @click="locateCurrent">
-          <UiIcon name="check" />
-        </button>
         <ActionMenu
           :items="addItems"
           :label="t('nodes.addMenu')"
@@ -244,24 +157,6 @@ function locateCurrent() {
           button-icon="activity"
           button-class="btn btn-tonal btn-small"
           @select="chooseTest"
-        />
-        <ActionMenu
-          v-if="!isMobile"
-          :items="organizeItems"
-          :label="t('nodes.toolsMenu')"
-          :button-text="t('nodes.organizeMenu')"
-          button-icon="sort"
-          button-class="btn btn-outlined btn-small"
-          @select="chooseOrganize"
-        />
-        <ActionMenu
-          v-if="!isMobile"
-          :items="shareItems"
-          :label="t('nodes.shareMenu')"
-          :button-text="t('nodes.shareMenu')"
-          button-icon="share"
-          button-class="btn btn-outlined btn-small"
-          @select="chooseShare"
         />
       </div>
     </div>
@@ -497,8 +392,8 @@ function locateCurrent() {
   .toolbar-actions {
     display: grid;
     width: 100%;
-    /* Add and Test are the only toolbar actions left on mobile; the rest live
-       in the shared per-node context menu. Two columns keep labels readable. */
+    /* Add and Test are the only toolbar actions; every other action lives in
+       the shared per-node context menu. Two columns keep labels readable. */
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--nova-space-2);
   }

@@ -1,20 +1,72 @@
 <script setup lang="ts">
 import UiButton from '../../Components/Material/UiButton.vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../../App/context'
+import { planDragPosition } from '../../Composables/movementOrder'
+import type { Dict } from '../../Composables/types'
 import { vScrollShadow } from '../../UI/scrollShadow'
+import { useTableDragSort } from '../../UI/tableDragSort'
 
+const props = defineProps<{ visibleColumns: readonly string[] }>()
 const { t } = useI18n()
 const app = useNovaApp()
 const state = app.nodes.nodesPageState
 const actions = app.nodes.nodesPageActions
 
+const visible = computed(() => new Set(props.visibleColumns))
 const showIp = computed(() => Boolean(state.showIpInfoColumn))
-const colSpan = computed(() => showIp.value ? 16 : 15)
+const dataColumnIds = ['type', 'address', 'port', 'network', 'streamSecurity', 'group', 'delay', 'speed', 'todayUp', 'todayDown', 'totalUp', 'totalDown']
+const columnWidths: Record<string, number> = {
+  type: 100,
+  remarks: 220,
+  address: 220,
+  port: 70,
+  network: 110,
+  streamSecurity: 90,
+  group: 160,
+  delay: 104,
+  speed: 120,
+  ip: 110,
+  todayUp: 110,
+  todayDown: 110,
+  totalUp: 110,
+  totalDown: 110,
+}
+const colSpan = computed(() => 4 + dataColumnIds.filter((id) => isVisible(id)).length + (showIp.value ? 1 : 0))
+const minTableWidth = computed(() => 44 + 44 + 88 + columnWidths.remarks
+  + dataColumnIds.filter((id) => isVisible(id)).reduce((width, id) => width + columnWidths[id], 0)
+  + (showIp.value ? columnWidths.ip : 0))
 const selectionIndeterminate = computed(() => state.selectedIds.length > 0 && !state.allVisibleSelected)
+const tableShell = ref<HTMLElement | null>(null)
+const dragSort = useTableDragSort({
+  container: tableShell,
+  rowSelector: '[data-profile-id]',
+  getVisibleIds: () => state.filteredProfiles.map((profile: Dict) => profile.indexId),
+  onDrop: (draggedId, targetId, after) => {
+    const position = planDragPosition(
+      state.profiles.map((item: Dict) => item.indexId),
+      draggedId,
+      targetId,
+      after,
+    )
+    if (position !== null) void actions.moveProfileToPosition(draggedId, position)
+  },
+})
+const draggingProfileId = dragSort.draggingId
+const dragPlaceholderIndex = dragSort.placeholderIndex
+const dragRowHeight = dragSort.rowHeight
+const isDragSorting = dragSort.isDragging
+const beginProfileDrag = dragSort.begin
+const displayedProfiles = computed(() => draggingProfileId.value
+  ? state.filteredProfiles.filter((profile: Dict) => profile.indexId !== draggingProfileId.value)
+  : state.filteredProfiles)
+
+function isVisible(id: string) {
+  return visible.value.has(id)
+}
 
 function sortState(column: string) {
   return state.sorting.column === column ? (state.sorting.ascending ? 'ascending' : 'descending') : 'none'
@@ -34,8 +86,8 @@ function preventRangeTextSelection(event: MouseEvent) {
 </script>
 
 <template>
-  <div v-scroll-shadow class="table-shell nodes-table-shell">
-    <table class="data-table profile-table">
+  <div ref="tableShell" v-scroll-shadow class="table-shell nodes-table-shell">
+    <table class="data-table profile-table" :style="{ minWidth: `${minTableWidth}px` }">
       <thead>
         <tr>
           <th class="cell-check">
@@ -51,7 +103,8 @@ function preventRangeTextSelection(event: MouseEvent) {
               :aria-label="t('common.selected', { count: state.selectedIds.length })"
             >{{ state.selectedIds.length }}</span>
           </th>
-          <th :aria-sort="sortState('ConfigType')">
+          <th class="cell-drag"><span class="visually-hidden">{{ t('nodes.dragToSort') }}</span></th>
+          <th v-if="isVisible('type')" :aria-sort="sortState('ConfigType')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('ConfigType')">
               {{ t('nodes.type') }}<UiIcon v-if="sortState('ConfigType') !== 'none'" :name="sortState('ConfigType') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
@@ -61,101 +114,138 @@ function preventRangeTextSelection(event: MouseEvent) {
               {{ t('nodes.remarks') }}<UiIcon v-if="sortState('Remarks') !== 'none'" :name="sortState('Remarks') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
           </th>
-          <th :aria-sort="sortState('Address')">
+          <th v-if="isVisible('address')" :aria-sort="sortState('Address')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('Address')">
               {{ t('nodes.address') }}<UiIcon v-if="sortState('Address') !== 'none'" :name="sortState('Address') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
           </th>
-          <th class="cell-number" :aria-sort="sortState('Port')">
+          <th v-if="isVisible('port')" class="cell-number" :aria-sort="sortState('Port')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('Port')">
               {{ t('nodes.port') }}<UiIcon v-if="sortState('Port') !== 'none'" :name="sortState('Port') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
           </th>
-          <th :aria-sort="sortState('Network')">
+          <th v-if="isVisible('network')" :aria-sort="sortState('Network')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('Network')">
               {{ t('nodes.network') }}<UiIcon v-if="sortState('Network') !== 'none'" :name="sortState('Network') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
           </th>
-          <th :aria-sort="sortState('StreamSecurity')">
+          <th v-if="isVisible('streamSecurity')" :aria-sort="sortState('StreamSecurity')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('StreamSecurity')">
               {{ t('nodes.tls') }}<UiIcon v-if="sortState('StreamSecurity') !== 'none'" :name="sortState('StreamSecurity') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
           </th>
-          <th :aria-sort="sortState('SubRemarks')">
+          <th v-if="isVisible('group')" :aria-sort="sortState('SubRemarks')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('SubRemarks')">
               {{ t('nodes.groupColumn') }}<UiIcon v-if="sortState('SubRemarks') !== 'none'" :name="sortState('SubRemarks') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
           </th>
-          <th class="cell-number cell-delay" :aria-sort="sortState('DelayVal')">
+          <th v-if="isVisible('delay')" class="cell-number cell-delay" :aria-sort="sortState('DelayVal')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('DelayVal')">
               {{ t('nodes.delay') }}<UiIcon v-if="sortState('DelayVal') !== 'none'" :name="sortState('DelayVal') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
           </th>
-          <th class="cell-number cell-speed" :aria-sort="sortState('SpeedVal')">
+          <th v-if="isVisible('speed')" class="cell-number cell-speed" :aria-sort="sortState('SpeedVal')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('SpeedVal')">
               {{ t('nodes.speed') }}<UiIcon v-if="sortState('SpeedVal') !== 'none'" :name="sortState('SpeedVal') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
           </th>
           <th v-if="showIp">{{ t('nodes.ip') }}</th>
-          <th class="cell-number">{{ t('nodes.todayUp') }}</th>
-          <th class="cell-number">{{ t('nodes.todayDown') }}</th>
-          <th class="cell-number">{{ t('nodes.totalUp') }}</th>
-          <th class="cell-number">{{ t('nodes.totalDown') }}</th>
+          <th v-if="isVisible('todayUp')" class="cell-number">{{ t('nodes.todayUp') }}</th>
+          <th v-if="isVisible('todayDown')" class="cell-number">{{ t('nodes.todayDown') }}</th>
+          <th v-if="isVisible('totalUp')" class="cell-number">{{ t('nodes.totalUp') }}</th>
+          <th v-if="isVisible('totalDown')" class="cell-number">{{ t('nodes.totalDown') }}</th>
           <th class="cell-actions">{{ t('nodes.actions') }}</th>
         </tr>
       </thead>
       <tbody>
+        <template v-for="(profile, index) in displayedProfiles" :key="profile.indexId">
+          <tr
+            v-if="isDragSorting && dragPlaceholderIndex === index"
+            class="table-drag-placeholder"
+            data-drag-row-key="__placeholder__"
+            aria-hidden="true"
+          >
+            <td :colspan="colSpan">
+              <div class="table-drag-placeholder-box" :style="{ height: `${Math.max(dragRowHeight - 4, 0)}px` }" />
+            </td>
+          </tr>
+          <tr
+            :data-profile-id="profile.indexId"
+            :data-drag-row-key="profile.indexId"
+            :tabindex="state.focusedProfileId === profile.indexId ? 0 : -1"
+            :aria-current="profile.isCurrent ? 'true' : undefined"
+            :aria-selected="state.selectedIds.includes(profile.indexId)"
+            :class="{
+              'is-current': profile.isCurrent,
+              'is-selected': state.selectedIds.includes(profile.indexId),
+            }"
+            @focus="actions.setFocusedProfile(profile.indexId)"
+            @mousedown="preventRangeTextSelection"
+            @click="actions.focusProfile($event, profile)"
+            @keydown="actions.handleRowKeydown($event, profile)"
+            @dblclick="actions.selectProfile(profile)"
+            @contextmenu.stop.prevent="actions.openContext($event, profile)"
+          >
+            <td class="cell-check" @click.stop @dblclick.stop>
+              <UiCheckbox
+                :model-value="state.selectedIds.includes(profile.indexId)"
+                :aria-label="profile.remarks || profile.address"
+                @change="actions.toggleProfile(profile.indexId)"
+              />
+            </td>
+            <td class="cell-drag" @click.stop @dblclick.stop>
+              <button
+                type="button"
+                class="icon-btn icon-btn-small drag-handle"
+                :aria-label="t('nodes.dragToSort')"
+                :title="t('nodes.dragToSort')"
+                @pointerdown="beginProfileDrag($event, profile.indexId)"
+              >
+                <UiIcon name="drag-handle" :size="16" />
+              </button>
+            </td>
+            <td v-if="isVisible('type')"><span class="badge badge-primary protocol-code">{{ profile.protocol }}</span></td>
+            <td class="name-cell">
+              <div class="name-cell-inner">
+                <UiIcon v-if="profile.isCurrent" class="current-marker" name="check" :size="14" :label="t('nodes.current')" />
+                <span class="truncate" :title="profile.remarks">{{ profile.remarks || '—' }}</span>
+              </div>
+            </td>
+            <td v-if="isVisible('address')">
+              <span class="mono endpoint-value" :title="`${profile.address}:${profile.port}`">{{ profile.address }}</span>
+            </td>
+            <td v-if="isVisible('port')" class="cell-number">{{ profile.port }}</td>
+            <td v-if="isVisible('network')"><span class="badge">{{ profile.network || '—' }}</span></td>
+            <td v-if="isVisible('streamSecurity')"><span class="badge">{{ profile.streamSecurity || '—' }}</span></td>
+            <td v-if="isVisible('group')"><span class="truncate group-value" :title="profile.subscriptionName">{{ profile.subscriptionName || t('common.none') }}</span></td>
+            <td v-if="isVisible('delay')" class="cell-number cell-delay" :class="{ 'danger-text': profile.delay < 0 }">{{ actions.formatDelay(profile.delay) }}</td>
+            <td v-if="isVisible('speed')" class="cell-number cell-speed">{{ formatSpeed(profile.speed) }}</td>
+            <td v-if="showIp"><span class="truncate ip-value" :title="profile.ipInfo">{{ profile.ipInfo || '—' }}</span></td>
+            <td v-if="isVisible('todayUp')" class="cell-number metric-muted">{{ actions.formatBytes(profile.todayUp) }}</td>
+            <td v-if="isVisible('todayDown')" class="cell-number metric-muted">{{ actions.formatBytes(profile.todayDown) }}</td>
+            <td v-if="isVisible('totalUp')" class="cell-number metric-muted">{{ actions.formatBytes(profile.totalUp) }}</td>
+            <td v-if="isVisible('totalDown')" class="cell-number metric-muted">{{ actions.formatBytes(profile.totalDown) }}</td>
+            <td class="cell-actions" @dblclick.stop>
+              <button
+                type="button"
+                class="icon-btn icon-btn-small"
+                :aria-label="t('nodes.actions')"
+                :title="t('nodes.actions')"
+                @click.stop="actions.openContext($event, profile)"
+              >
+                <UiIcon name="more" />
+              </button>
+            </td>
+          </tr>
+        </template>
         <tr
-          v-for="profile in state.filteredProfiles"
-          :key="profile.indexId"
-          :data-profile-id="profile.indexId"
-          :tabindex="state.focusedProfileId === profile.indexId ? 0 : -1"
-          :aria-current="profile.isCurrent ? 'true' : undefined"
-          :aria-selected="state.selectedIds.includes(profile.indexId)"
-          :class="{ 'is-current': profile.isCurrent, 'is-selected': state.selectedIds.includes(profile.indexId) }"
-          @focus="actions.setFocusedProfile(profile.indexId)"
-          @mousedown="preventRangeTextSelection"
-          @click="actions.focusProfile($event, profile)"
-          @keydown="actions.handleRowKeydown($event, profile)"
-          @dblclick="actions.selectProfile(profile)"
-          @contextmenu.stop.prevent="actions.openContext($event, profile)"
+          v-if="isDragSorting && dragPlaceholderIndex >= displayedProfiles.length"
+          class="table-drag-placeholder"
+          data-drag-row-key="__placeholder__"
+          aria-hidden="true"
         >
-          <td class="cell-check" @click.stop @dblclick.stop>
-            <UiCheckbox
-              :model-value="state.selectedIds.includes(profile.indexId)"
-              :aria-label="profile.remarks || profile.address"
-              @change="actions.toggleProfile(profile.indexId)"
-            />
-          </td>
-          <td><span class="badge badge-primary protocol-code">{{ profile.protocol }}</span></td>
-          <td class="name-cell">
-            <UiIcon v-if="profile.isCurrent" class="current-marker" name="check" :size="14" :label="t('nodes.current')" />
-            <span class="truncate" :title="profile.remarks">{{ profile.remarks || '—' }}</span>
-          </td>
-          <td>
-            <span class="mono endpoint-value" :title="`${profile.address}:${profile.port}`">{{ profile.address }}</span>
-          </td>
-          <td class="cell-number">{{ profile.port }}</td>
-          <td><span class="badge">{{ profile.network || '—' }}</span></td>
-          <td><span class="badge">{{ profile.streamSecurity || '—' }}</span></td>
-          <td><span class="truncate group-value" :title="profile.subscriptionName">{{ profile.subscriptionName || t('common.none') }}</span></td>
-          <td class="cell-number cell-delay" :class="{ 'danger-text': profile.delay < 0 }">{{ actions.formatDelay(profile.delay) }}</td>
-          <td class="cell-number cell-speed">{{ formatSpeed(profile.speed) }}</td>
-          <td v-if="showIp"><span class="truncate ip-value" :title="profile.ipInfo">{{ profile.ipInfo || '—' }}</span></td>
-          <td class="cell-number metric-muted">{{ actions.formatBytes(profile.todayUp) }}</td>
-          <td class="cell-number metric-muted">{{ actions.formatBytes(profile.todayDown) }}</td>
-          <td class="cell-number metric-muted">{{ actions.formatBytes(profile.totalUp) }}</td>
-          <td class="cell-number metric-muted">{{ actions.formatBytes(profile.totalDown) }}</td>
-          <td class="cell-actions" @dblclick.stop>
-            <button
-              type="button"
-              class="icon-btn icon-btn-small"
-              :aria-label="t('nodes.actions')"
-              :title="t('nodes.actions')"
-              @click.stop="actions.openContext($event, profile)"
-            >
-              <UiIcon name="more" />
-            </button>
+          <td :colspan="colSpan">
+            <div class="table-drag-placeholder-box" :style="{ height: `${dragRowHeight}px` }" />
           </td>
         </tr>
         <tr v-if="!state.filteredProfiles.length">
@@ -187,8 +277,23 @@ function preventRangeTextSelection(event: MouseEvent) {
   max-height: min(68dvh, 820px);
 }
 
-.profile-table {
-  min-width: 1640px;
+.profile-table .cell-drag {
+  width: 44px;
+  min-width: 44px;
+  padding-inline: 4px;
+  text-align: center;
+}
+
+.drag-handle {
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 
 /* Reserve room for streaming test results so columns do not resize as
@@ -207,14 +312,20 @@ function preventRangeTextSelection(event: MouseEvent) {
 
 .name-cell {
   position: relative;
-  display: flex;
   min-width: 160px;
-  max-width: 280px;
-  align-items: center;
-  gap: var(--nova-space-2);
   /* Reserve the trailing marker gutter on every row so flags and names keep the
      same left edge as the header whether or not the row is current. */
   padding-inline-end: calc(var(--nova-space-3) + 22px);
+}
+
+/* Cap the visible content without capping the table cell itself: a max-width on
+   the cell leaves the stretched column without a bottom border when optional
+   columns are hidden. */
+.name-cell-inner {
+  display: flex;
+  max-width: 280px;
+  align-items: center;
+  gap: var(--nova-space-2);
 }
 
 .current-marker {

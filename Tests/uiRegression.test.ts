@@ -77,8 +77,22 @@ test('node moves use the whole group rather than treating filtered rows as a bou
   profiles.selectedIds.value = ['B', 'C']
   profiles.nodesPageState.filter = 'B|C'
   await profiles.nodesPageActions.moveSelected('up')
-  assert.equal(requests[0], '/api/profiles')
+  assert.equal(requests[0], '/api/profiles?subscriptionId=')
   assert.deepEqual(requests.slice(1, 3), ['B', 'C'])
+})
+
+test('the all-group selection is sent explicitly instead of using the backend current group', async () => {
+  const harness = createSourceHarness()
+  const requests = []
+  const profiles = createProfiles(harness, { data: async (route) => { requests.push(route); return [] } })
+  await profiles.loadProfiles()
+  assert.equal(requests[0], '/api/profiles?subscriptionId=')
+  profiles.nodesPageState.filter = 'hk'
+  await profiles.loadProfiles()
+  assert.equal(requests[1], '/api/profiles?subscriptionId=&filter=hk')
+  profiles.selectedGroup.value = 'kitty'
+  await profiles.loadProfiles()
+  assert.equal(requests[2], '/api/profiles?subscriptionId=kitty&filter=hk')
 })
 
 test('canceling a pending node editor load cannot reopen a dialog with previously fetched credentials', async () => {

@@ -17,5 +17,5 @@ test('nodes table conditionally removes both IP header and cells when unavailabl
   const source = await readFile(pagePath, 'utf8')
   assert.match(source, /v-if="showIp"[^>]*>\{\{ t\('nodes\.ip'\) \}\}/)
   assert.match(source, /<td v-if="showIp"><span class="truncate ip-value"/)
-  assert.match(source, /showIp\.value \? 16 : 15/)
+  assert.match(source, /const colSpan = computed\(\(\) => 4 \+ dataColumnIds\.filter\(\(id\) => isVisible\(id\)\)\.length \+ \(showIp\.value \? 1 : 0\)\)/)
 })

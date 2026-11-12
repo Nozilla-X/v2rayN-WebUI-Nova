@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+### Added
+
+- Pointer-driven node and subscription row reordering with a lifted ghost row, dashed drop
+  placeholder, FLIP shift animation for the remaining rows, edge auto-scroll and Escape cancel.
+- Configurable node and subscription table columns, persisted per table in local storage.
+- Shared desktop column-settings dialog; required name columns can never be hidden.
+
+### Changed
+
+- The node toolbar test menu now only keeps actions the shared row context menu does not offer,
+  and the row-reorder submenu was removed from that menu.
+- The subscription page no longer shows the redundant "update selected" button.
+
+### Fixed
+
+- Profile group requests now send an explicit empty `subscriptionId` for the all-group chip, so
+  the visible rows always match the focused group after signing out and back in.
+- Hiding table columns no longer leaves gaps in row dividers when the remaining cells stretch.
+
 ## [2.0.0] - 2026-11-11
 
 Nova is a complete presentation-layer rewrite of v2rayN WebUI. It keeps the original API
