@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import ActionMenu, { type ActionMenuItem } from '../../Components/Material/ActionMenu.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../../App/context'
+import { useMediaQuery } from '../../UI/useMediaQuery'
 import { usePageRequests } from '../../UI/useUiRequests'
 
 const { t } = useI18n()
@@ -11,6 +12,7 @@ const app = useNovaApp()
 const state = app.nodes.nodesPageState
 const actions = app.nodes.nodesPageActions
 const runtime = app.runtime
+const isMobile = useMediaQuery('(max-width: 860px)')
 const { run } = usePageRequests('nodes')
 
 const testing = computed(() => runtime.operations.value.includes('speedtest'))
@@ -71,6 +73,15 @@ const testItems = computed<ActionMenuItem[]>(() => [
   { id: 'sep-stop', separator: true },
   { id: 'stop-tests', label: t('nodes.stopTest'), icon: 'stop', disabled: !testing.value },
 ])
+
+// The mobile card menu is the shared NodeContextMenu. Test types, delay sorting
+// and stopping a run already live there, so the toolbar only keeps the two test
+// actions the context menu does not own.
+const toolbarTestItems = computed<ActionMenuItem[]>(() => {
+  if (!isMobile.value) return testItems.value
+  const toolbarOnlyIds = new Set(['test-group', 'sort-speed'])
+  return testItems.value.filter((item) => !item.separator && toolbarOnlyIds.has(item.id || ''))
+})
 
 const organizeItems = computed<ActionMenuItem[]>(() => {
   const disabled = state.selectedIds.length === 0
@@ -227,7 +238,7 @@ function locateCurrent() {
           @select="chooseAdd"
         />
         <ActionMenu
-          :items="testItems"
+          :items="toolbarTestItems"
           :label="t('nodes.testMenu')"
           :button-text="t('nodes.test')"
           button-icon="activity"
@@ -235,6 +246,7 @@ function locateCurrent() {
           @select="chooseTest"
         />
         <ActionMenu
+          v-if="!isMobile"
           :items="organizeItems"
           :label="t('nodes.toolsMenu')"
           :button-text="t('nodes.organizeMenu')"
@@ -243,6 +255,7 @@ function locateCurrent() {
           @select="chooseOrganize"
         />
         <ActionMenu
+          v-if="!isMobile"
           :items="shareItems"
           :label="t('nodes.shareMenu')"
           :button-text="t('nodes.shareMenu')"
@@ -286,13 +299,6 @@ function locateCurrent() {
 
     <div class="nodes-feedback-slot">
       <slot name="feedback" />
-      <div v-if="testing" class="operation-status" role="status">
-        <span class="status-dot is-on" />
-        <span>{{ t('polish.testing') }}</span>
-        <button type="button" class="text-button danger-text" @click="actions.stopSpeedTests">
-          {{ t('nodes.stopTest') }}
-        </button>
-      </div>
     </div>
   </div>
 </template>
@@ -491,7 +497,9 @@ function locateCurrent() {
   .toolbar-actions {
     display: grid;
     width: 100%;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* Add and Test are the only toolbar actions left on mobile; the rest live
+       in the shared per-node context menu. Two columns keep labels readable. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--nova-space-2);
   }
 
@@ -510,13 +518,4 @@ function locateCurrent() {
   }
 }
 
-/* Four equal columns below this width are narrower than an icon plus an
-   English label such as "Organize" (plus its button padding), so the label
-   would be cut instead of wrapping. Two columns give every action room; the
-   four-column grid returns as soon as the labels fit again. */
-@media (max-width: 560px) {
-  .toolbar-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 </style>

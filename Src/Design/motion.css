@@ -80,7 +80,10 @@
 
 /* A native <details> used to snap open and closed. Animate its content box
    height (including to and from auto) so folded sections unfold instead of
-   jumping; browsers without auto-size interpolation keep the native snap. */
+   jumping; browsers without auto-size interpolation keep the native snap.
+   Disclosures using the shared v-details-motion directive are excluded: that
+   directive animates an explicit content wrapper with identical timing and
+   also scrolls long editors into view, so the two never animate at once. */
 @supports (interpolate-size: allow-keywords) and selector(::details-content) {
   details::details-content {
     /* Scope keyword interpolation to the animated pseudo-element only. */
@@ -101,13 +104,13 @@
 
   /* Reduced motion keeps the native instant toggle. */
   @media (prefers-reduced-motion: no-preference) {
-    details::details-content {
+    details:not(.ui-details-motion)::details-content {
       transition:
         block-size var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard-accelerate),
         content-visibility var(--md-sys-motion-duration-short3) allow-discrete;
     }
 
-    details[open]::details-content {
+    details:not(.ui-details-motion)[open]::details-content {
       transition:
         block-size var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate),
         content-visibility var(--md-sys-motion-duration-medium2) allow-discrete;

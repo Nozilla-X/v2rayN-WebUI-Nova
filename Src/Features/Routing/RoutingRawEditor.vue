@@ -7,6 +7,7 @@ import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../../App/context'
 import { codeEditor as vCodeEditor } from '../../UI/codeEditor'
+import { vDetailsMotion } from '../../UI/detailsMotion'
 import { usePageRequests } from '../../UI/useUiRequests'
 
 const { t } = useI18n()
@@ -55,9 +56,9 @@ function save() {
 </script>
 
 <template>
-  <details class="disclosure raw-editor">
+  <details v-details-motion class="disclosure raw-editor">
     <summary>{{ t('routing.advancedJson') }}</summary>
-    <div class="raw-content">
+    <div class="raw-content ui-details-content">
       <p class="field-hint">{{ t('routing.ruleJsonHint') }} · {{ t('polish.editorKeyboard') }}</p>
       <div class="import-bar">
         <label class="check append-check">

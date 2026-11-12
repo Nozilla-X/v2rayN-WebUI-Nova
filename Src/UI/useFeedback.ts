@@ -1,7 +1,7 @@
 import { nextTick, onUnmounted, ref } from 'vue'
 import type { ApiError, Dict, NoticeKind, Translate } from '../Composables/types'
 
-interface ToastEntry { id: number; message: string; kind: NoticeKind }
+interface ToastEntry { id: number; message: string; kind: NoticeKind; icon?: string; persistent?: boolean }
 interface ConfirmationRequest { message: string; resolve: (confirmed: boolean) => void }
 
 /** Local UI feedback only. The application still owns API/session orchestration. */
@@ -39,6 +39,12 @@ export function useFeedback(t: Translate, translateKey: (key?: string | null) =>
     toastTimers.delete(id)
     toasts.value = toasts.value.filter((toast) => toast.id !== id)
   }
+  function evictToast() {
+    if (toasts.value.length < 4) return
+    // A persistent operation status must survive a burst of regular notices.
+    const candidate = toasts.value.find((toast) => !toast.persistent) ?? toasts.value[0]
+    dismissToast(candidate.id)
+  }
   function showNotice(message: string, kind: NoticeKind = 'success') {
     const normalized = String(message || '').trim()
     if (!normalized) return
@@ -48,11 +54,25 @@ export function useFeedback(t: Translate, translateKey: (key?: string | null) =>
       const timer = toastTimers.get(id)
       if (timer) clearTimeout(timer)
     } else {
-      if (toasts.value.length >= 4) dismissToast(toasts.value[0].id)
+      evictToast()
       toasts.value = [...toasts.value, { id, message: normalized, kind }]
     }
     const timeout = kind === 'error' ? 12000 : kind === 'warning' ? 9000 : 3500
     toastTimers.set(id, setTimeout(() => dismissToast(id), timeout))
+  }
+  /**
+   * A toast that stays until dismissed explicitly. Long-running operations use
+   * this so the status never disappears before the operation finishes.
+   */
+  function showPersistentNotice(message: string, kind: NoticeKind = 'info', icon = 'activity'): number {
+    const normalized = String(message || '').trim()
+    if (!normalized) return 0
+    const duplicate = toasts.value.find((toast) => toast.persistent && toast.kind === kind && toast.message === normalized)
+    if (duplicate) return duplicate.id
+    const id = nextToastId++
+    evictToast()
+    toasts.value = [...toasts.value, { id, message: normalized, kind, icon, persistent: true }]
+    return id
   }
   function showError(error: unknown) {
     const issue = error as ApiError
@@ -76,5 +96,5 @@ export function useFeedback(t: Translate, translateKey: (key?: string | null) =>
     for (const timer of toastTimers.values()) clearTimeout(timer)
     toastTimers.clear()
   })
-  return { toasts, activeConfirmation, confirmDestructive, resolveConfirmation, dismissToast, showNotice, showError, reset }
+  return { toasts, activeConfirmation, confirmDestructive, resolveConfirmation, dismissToast, showNotice, showPersistentNotice, showError, reset }
 }

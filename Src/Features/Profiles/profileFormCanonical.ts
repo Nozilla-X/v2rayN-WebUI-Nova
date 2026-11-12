@@ -1,4 +1,5 @@
 import type { Dict } from '../../Composables/types'
+import { reconcileProfileExtraKeys } from '../../Composables/profilePayloads'
 
 export const groupConfigTypes = ['PolicyGroup', 'ProxyChain']
 export const realityConfigTypes = ['VLESS', 'Trojan', 'Anytls']
@@ -46,7 +47,12 @@ export function canonicalizeProtocolChange(form: Dict, advancedJson: string, edi
   }
   const configType = String(form.configType || '')
   const protocolExtra = form.protoExtra || (form.protoExtra = {})
-  const advancedProtocolExtra = parseObject(advanced.protoExtra)
+  const rawAdvancedProtocolExtra = parseObject(advanced.protoExtra)
+  const advancedProtocolExtra = reconcileProfileExtraKeys(rawAdvancedProtocolExtra, 'protocol', {
+    advanced: rawAdvancedProtocolExtra,
+    current: rawAdvancedProtocolExtra,
+    initial: rawAdvancedProtocolExtra,
+  })
   if (!groupConfigTypes.includes(configType)) {
     removeKeys(protocolExtra, groupProtocolExtraFields)
     removeKeys(advancedProtocolExtra, groupProtocolExtraFields)
@@ -90,7 +96,12 @@ export function canonicalizeProtocolChange(form: Dict, advancedJson: string, edi
     form.network = editorOptions.defaultNetwork
     removeKeys(form.transportExtra || {}, transportExtraFields)
     advanced.network = editorOptions.defaultNetwork
-    const advancedTransportExtra = parseObject(advanced.transportExtra)
+    const rawAdvancedTransportExtra = parseObject(advanced.transportExtra)
+    const advancedTransportExtra = reconcileProfileExtraKeys(rawAdvancedTransportExtra, 'transport', {
+      advanced: rawAdvancedTransportExtra,
+      current: rawAdvancedTransportExtra,
+      initial: rawAdvancedTransportExtra,
+    })
     removeKeys(advancedTransportExtra, transportExtraFields)
     advanced.transportExtra = typeof advanced.transportExtra === 'string' ? JSON.stringify(advancedTransportExtra) : advancedTransportExtra
     removeKeys(advanced, ['headerType', 'requestHost', 'path', 'extra'])

@@ -335,7 +335,9 @@
 }
 
 .mobile-topbar.has-back {
-  padding-left: calc(60px + var(--nova-safe-left));
+  /* The floating back control is 48px wide at a 12px inset. Reserve a visible
+     gutter after it instead of starting the page title at the button's edge. */
+  padding-left: calc(72px + var(--nova-safe-left));
 }
 
 @media (max-width: 860px) {

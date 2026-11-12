@@ -193,6 +193,9 @@ async function openSubmenu(item: MenuEntry, event: Event | null, focusFirst = fa
 }
 
 function hoverSubmenu(item: MenuEntry, event: Event) {
+  // Touch browsers synthesize mouseenter before click. Opening on that hover
+  // would make the following click toggle the submenu straight back closed.
+  if (typeof window.matchMedia === 'function' && !window.matchMedia('(hover: hover)').matches) return
   if (activeSubmenu.value?.id === item.id) return
   void openSubmenu(item, event)
 }
@@ -391,5 +394,12 @@ onUnmounted(() => {
 
 .submenu-trigger.is-open {
   background: var(--nova-color-state-hover);
+}
+
+@media (max-width: 860px) {
+  .context-menu .menu-shortcut,
+  .context-submenu .menu-shortcut {
+    display: none;
+  }
 }
 </style>

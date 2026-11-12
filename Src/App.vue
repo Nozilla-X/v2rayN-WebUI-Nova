@@ -79,7 +79,7 @@ const contextMenu = ref<Dict | null>(null)
 let connectionGeneration = 0
 
 const feedback = useFeedback(t, translateKey)
-const { toasts, activeConfirmation, confirmDestructive, resolveConfirmation, dismissToast, showNotice, showError } = feedback
+const { toasts, activeConfirmation, confirmDestructive, resolveConfirmation, dismissToast, showNotice, showPersistentNotice, showError } = feedback
 const uiRequests = useUiRequests(confirmDestructive)
 provideUiRequests(uiRequests)
 
@@ -105,6 +105,21 @@ const api = uiRequests.decorate(useApi({
   translateKey,
 }))
 const runtime = useRuntime({ ...api, showNotice, showError })
+// Keep the speed-test status on screen for the whole run. A regular notice
+// times out, which used to hide the operation while results were still coming.
+let speedTestNoticeId = 0
+watch(
+  () => runtime.operations.value.includes('speedtest'),
+  (testing) => {
+    if (testing) {
+      if (!speedTestNoticeId) speedTestNoticeId = showPersistentNotice(t('polish.testing'), 'success', 'activity')
+    } else if (speedTestNoticeId) {
+      dismissToast(speedTestNoticeId)
+      speedTestNoticeId = 0
+    }
+  },
+  { immediate: true },
+)
 const settingsWriteLock = createWriteLock()
 const profiles = useProfiles({
   ...api, t, showNotice, showError, confirm: confirmDestructive,

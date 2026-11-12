@@ -54,8 +54,8 @@ const values = (key: string): (string | number | null)[] => Array.isArray(props.
         <FormField v-model="form.enableFinalFragment" kind="check" :label="t('settings.finalFragment')" />
         <FormField v-model="form.fragmentPackets" kind="select" :allow-none="true" :label="t('settings.fragmentPackets')" :options="values('fragmentPacketsOptions')" />
         <FormField v-model="form.fragmentMaxSplit" :label="t('settings.fragmentMaxSplit')" />
-        <FormField v-model="form.fragmentLengthsText" kind="textarea" :label="t('settings.fragmentLengths')" />
-        <FormField v-model="form.fragmentDelaysText" kind="textarea" :label="t('settings.fragmentDelays')" />
+        <FormField v-model="form.fragmentLengthsText" :label="t('settings.fragmentLengths')" />
+        <FormField v-model="form.fragmentDelaysText" :label="t('settings.fragmentDelays')" />
       </div>
     </UiDisclosure>
 

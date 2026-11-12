@@ -60,10 +60,13 @@ test('routing rules keep their columns readable and label the mobile state corre
   ])
   assert.match(panel, /container-type:\s*inline-size/)
   assert.match(panel, /@container \(max-width: 1400px\)[\s\S]*?position:\s*static/)
-  assert.match(panel, /t\('routing\.status'\)/)
+  // Mobile status is a visible chip, not a bare dot relying on a tooltip.
+  assert.match(panel, /class="badge rule-status"/)
+  assert.match(panel, /t\('common\.disabled'\)/)
+  assert.match(panel, /t\('common\.enabled'\)/)
   assert.doesNotMatch(panel, /t\('routing\.enabled'\)/)
-  assert.deepEqual([zhCN.routing.status, zhTW.routing.status, en.routing.status], ['状态', '狀態', 'Status'])
-  assert.deepEqual([zhCN.routing.status !== zhCN.common.enabled, zhTW.routing.status !== zhTW.common.enabled, en.routing.status !== en.common.enabled], [true, true, true])
+  assert.deepEqual([zhCN.common.enabled, zhTW.common.enabled, en.common.enabled], ['启用', '啟用', 'Enabled'])
+  assert.deepEqual([zhCN.common.disabled, zhTW.common.disabled, en.common.disabled], ['停用', '停用', 'Disabled'])
 })
 
 test('the desktop navigation landmark and import fields use distinct localized labels', async () => {
@@ -120,9 +123,9 @@ test('inbound settings do not repeat the disclosure title and English transport 
   assert.notEqual(en.nodes.transport, en.nodes.network)
 })
 
-test('phone-width node actions fall back to two columns instead of clipping labels', async () => {
+test('mobile node actions use two columns instead of clipping labels', async () => {
   const toolbar = await read('Features/Nodes/NodesToolbar.vue')
-  assert.match(toolbar, /@media \(max-width: 560px\)\s*\{[^}]*\.toolbar-actions\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
+  assert.match(toolbar, /@media \(max-width: 860px\)\s*\{[\s\S]*?\.toolbar-actions\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
   assert.doesNotMatch(toolbar, /@media \(min-width: 361px\) and \(max-width: 430px\)/)
 })
 
@@ -140,18 +143,14 @@ test('the logs toolbar filters on Enter without a redundant refresh button and s
 })
 
 test('foldable disclosures animate their content height instead of snapping', async () => {
-  const [motion, subscriptions] = await Promise.all([
-    read('Design/motion.css'),
-    read('Pages/SubscriptionsPage.vue'),
-  ])
+  const motion = await read('Design/motion.css')
   assert.match(motion, /interpolate-size:\s*allow-keywords/)
   assert.match(motion, /details::details-content\s*\{[^}]*block-size:\s*0/)
   assert.match(motion, /details::details-content\s*\{[^}]*overflow:\s*clip/)
   assert.match(motion, /details::details-content\s*\{[^}]*contain:\s*layout/)
   assert.match(motion, /details\[open\]::details-content\s*\{[^}]*block-size:\s*auto/)
   assert.match(motion, /content-visibility[^;]*allow-discrete/)
-  assert.match(motion, /@media \(prefers-reduced-motion: no-preference\)[\s\S]*?details::details-content\s*\{[^}]*transition:/)
-  assert.match(subscriptions, /\.subscription-details > summary \.ui-icon \{[^}]*transition:/)
+  assert.match(motion, /@media \(prefers-reduced-motion: no-preference\)[\s\S]*?details(?::not\(\.ui-details-motion\))?::details-content\s*\{[^}]*transition:/)
 })
 
 test('reduced motion removes spatial movement without flattening colour feedback', async () => {

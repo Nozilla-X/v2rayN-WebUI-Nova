@@ -6,6 +6,8 @@ interface ToastEntry {
   id: number
   message: string
   kind: string
+  icon?: string
+  persistent?: boolean
 }
 
 const props = defineProps<{
@@ -32,7 +34,7 @@ const iconFor = computed<Record<string, string>>(() => ({
         class="toast"
         :class="`toast-${toast.kind}`"
       >
-        <UiIcon :name="iconFor[toast.kind] || 'info'" />
+        <UiIcon :name="toast.icon || iconFor[toast.kind] || 'info'" />
         <span class="toast-message">{{ toast.message }}</span>
         <button
           type="button"

@@ -31,14 +31,19 @@ test('the mobile tab bar is a floating glass surface with safe-area padding and 
 })
 
 test('the floating Back button appears only on secondary pages and delegates to guarded in-app history', async () => {
-  const back = await read('Shell/MobileBackButton.vue')
-  const route = await read('Composables/useAppRoute.ts')
+  const [back, route, topbar] = await Promise.all([
+    read('Shell/MobileBackButton.vue'),
+    read('Composables/useAppRoute.ts'),
+    read('Design/topbar.css'),
+  ])
   assert.match(back, /v-if="visible"/)
   assert.match(back, /isSecondaryPage\(app\.route\.currentPage\.value\)/)
   assert.match(back, /app\.actions\.goBack\('more'\)/)
   assert.match(route, /window\.history\.back\(\)/)
   assert.match(route, /await navigate\(fallback, 'replace'\)/)
   assert.match(route, /if \(token !== guardToken\) return false/)
+  // 48px floating button + 12px inset + a 12px gutter before the title copy.
+  assert.match(topbar, /\.mobile-topbar\.has-back\s*\{[^}]*padding-left:\s*calc\(72px \+ var\(--nova-safe-left\)\)/)
 })
 
 test('desktop keeps a rail/drawer while mobile hides it and uses the floating bars', async () => {
@@ -56,14 +61,65 @@ test('desktop keeps a rail/drawer while mobile hides it and uses the floating ba
 })
 
 test('mobile node cards keep selection, current state and the full action set', async () => {
-  const cards = await read('Features/Nodes/NodesMobileList.vue')
+  const [cards, routing, mobileCss] = await Promise.all([
+    read('Features/Nodes/NodesMobileList.vue'),
+    read('Features/Routing/RoutingRulesPanel.vue'),
+    read('Design/mobile.css'),
+  ])
+  assert.match(cards, /class="mobile-card-check" @click\.stop/)
+  assert.match(routing, /class="mobile-card-check" @click\.stop/)
+  assert.match(mobileCss, /\.mobile-card-check \{[^}]*align-self: center/)
   assert.match(cards, /class="mobile-card-list nodes-mobile-list"/)
   assert.match(cards, /:class="\{ 'is-current': profile\.isCurrent, 'is-selected': state\.selectedIds\.includes\(profile\.indexId\) \}"/)
-  assert.match(cards, /<ActionMenu/)
+  // The card menu is the shared node context menu, so mobile gets the same
+  // nested action groups as the desktop row menu instead of a flat copy.
+  assert.match(cards, /@click\.stop="actions\.openContext\(\$event, profile\)"/)
+  assert.match(cards, /@click="selectCard\(profile\)"/)
+  assert.doesNotMatch(cards, /event\.detail/)
+  assert.doesNotMatch(cards, /<ActionMenu/)
   assert.match(cards, /<UiCheckbox/)
-  for (const action of ['selectProfile', 'startSpeedTest', 'runProfileAction', 'formatDelay', 'formatBytes']) {
+  for (const action of ['openContext', 'selectProfile', 'toggleProfile', 'formatDelay', 'formatBytes']) {
     assert.ok(cards.includes(`actions.${action}`), `mobile card exposes ${action}`)
   }
-  assert.match(cards, /id: 'edit'|t\('common\.edit'\)/)
   assert.match(cards, /@contextmenu\.prevent/)
+})
+
+test('mobile node toolbar leaves context-menu actions to the shared node menu', async () => {
+  const toolbar = await read('Features/Nodes/NodesToolbar.vue')
+  assert.match(toolbar, /const isMobile = useMediaQuery\('\(max-width: 860px\)'\)/)
+  assert.match(toolbar, /:items="toolbarTestItems"/)
+  assert.match(toolbar, /const toolbarOnlyIds = new Set\(\['test-group', 'sort-speed'\]\)/)
+  assert.match(toolbar, /v-if="!isMobile"[\s\S]*?:items="organizeItems"/)
+  assert.match(toolbar, /v-if="!isMobile"[\s\S]*?:items="shareItems"/)
+})
+
+test('mobile subscription cards keep the update action on the update line without a details disclosure', async () => {
+  const page = await read('Pages/SubscriptionsPage.vue')
+  assert.doesNotMatch(page, /subscription-details/)
+  assert.match(page, /class="subscription-update-line"[\s\S]*?class="subscription-update-copy"[\s\S]*?subscription-update-button/)
+  assert.match(page, /\.subscription-update-line\s*\{[^}]*justify-content:\s*space-between/)
+  assert.match(page, /\.subscription-update-button\s*\{[^}]*flex:\s*0 0 auto/)
+})
+
+test('mobile routing cards reveal read-only details on tap and state reads as a chip', async () => {
+  const panel = await read('Features/Routing/RoutingRulesPanel.vue')
+  const mobileCard = panel.match(/<article[\s\S]*?<\/article>/)?.[0] || ''
+  assert.match(panel, /const expandedRuleIds = ref<string\[\]>\(\[\]\)/)
+  assert.match(panel, /function toggleRuleDetails\(id: string, event\?: MouseEvent\)/)
+  assert.match(mobileCard, /@click="toggleRuleDetails\(rule\.id, \$event\)"/)
+  assert.match(mobileCard, /:aria-expanded="isRuleExpanded\(rule\.id\)"/)
+  assert.match(mobileCard, /:aria-controls="`rule-details-\$\{rule\.id\}`"/)
+  // The detail grid only exists after the disclosure opens, and contains no
+  // editable controls.
+  assert.match(mobileCard, /v-if="isRuleExpanded\(rule\.id\)"[\s\S]*?class="meta-grid rule-meta"/)
+  assert.doesNotMatch(mobileCard, /<(input|textarea|select)\b/)
+  assert.doesNotMatch(mobileCard, /contenteditable/)
+  // Status is always-readable text instead of a bare dot with a native title
+  // tooltip (which never appears on touch devices).
+  assert.match(mobileCard, /class="badge rule-status"/)
+  assert.match(mobileCard, /t\('common\.disabled'\)[\s\S]*?t\('common\.enabled'\)/)
+  assert.doesNotMatch(mobileCard, /status-dot/)
+  assert.doesNotMatch(mobileCard, /:title="rule\.enabled/)
+  assert.match(panel, /\.rule-card-chevron\s*\{[^}]*transition:/)
+  assert.match(panel, /\.rule-card\.is-expanded \.rule-card-chevron\s*\{[^}]*rotate\(180deg\)/)
 })

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import AppDialog from '../../Components/Material/AppDialog.vue'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
 import { useNovaApp } from '../../App/context'
+import { vDetailsMotion } from '../../UI/detailsMotion'
 import { optionValues } from './editorOptionValues'
 import { canonicalizeProtocolChange, realityConfigTypes, groupConfigTypes } from './profileFormCanonical'
 import { shadowsocksSecurityOptions } from '../../profileEditorOptions'
@@ -111,10 +112,12 @@ function close() {
         </template>
       </template>
 
-      <details class="advanced-editor">
+      <details v-details-motion class="advanced-editor">
         <summary>{{ t('nodes.advancedProfileFields') }}</summary>
-        <p class="field-hint">{{ t('nodes.advancedProfileHint') }}</p>
-        <textarea v-model="state.profileAdvancedJson" class="code-area advanced-profile-json" spellcheck="false" />
+        <div class="ui-details-content">
+          <p class="field-hint">{{ t('nodes.advancedProfileHint') }}</p>
+          <textarea v-model="state.profileAdvancedJson" class="code-area advanced-profile-json" spellcheck="false" />
+        </div>
       </details>
 
       <p v-if="state.profileModalError" class="inline-error" role="alert">{{ state.profileModalError }}</p>

@@ -1,7 +1,7 @@
 import { computed, reactive, ref, type Ref } from 'vue'
 import type { ApiError, ApiServices, Dict, ErrorHandler, Notice, Translate } from './types'
 import { canonicalNetwork } from '../profileEditorOptions'
-import { mergeFormEdits, normalizeProfileProtocolExtra, normalizeProfileTransportExtra } from './profilePayloads.ts'
+import { mergeFormEdits, normalizeProfileProtocolExtra, normalizeProfileTransportExtra, reconcileProfileExtraKeys } from './profilePayloads.ts'
 import { normalizeNullableNumbers } from './settingsPayloads.ts'
 import { mergeSpeedTestResult as mergeSpeedTestResultIntoRows } from './speedtestResults.ts'
 import { planSelectedMoves, planSelectedPositionMoves } from './movementOrder.ts'
@@ -412,11 +412,22 @@ export function useProfiles(options: ApiServices & {
       await loadProfileCatalog()
       if (session !== editorSession) return
       const configType = options.canonicalCode(details.configType, protocolTypes.value)
-      const protoExtra = parseObject(details.protoExtra)
+      const rawProtoExtra = parseObject(details.protoExtra)
+      const rawTransportExtra = parseObject(details.transportExtra)
+      // ServiceLib serializes PascalCase properties, while imports and older
+      // saves can leave a camelCase twin behind. Collapse them before the form
+      // reads them, otherwise the backend's case-insensitive last-wins reader
+      // silently replaces the live value (for example VlessEncryption with a
+      // stale "none" default).
+      const protoExtra = reconcileProfileExtraKeys(rawProtoExtra, 'protocol', {
+        advanced: rawProtoExtra, current: rawProtoExtra, initial: rawProtoExtra,
+      })
+      const transportExtra = reconcileProfileExtraKeys(rawTransportExtra, 'transport', {
+        advanced: rawTransportExtra, current: rawTransportExtra, initial: rawTransportExtra,
+      })
       if (configType === 'VMess' && !protoExtra.vmessSecurity) protoExtra.vmessSecurity = editorOptions.value.defaultSecurity || editorOptions.value.vmessSecurities?.[0] || ''
       if (configType === 'VLESS' && !protoExtra.vlessEncryption) protoExtra.vlessEncryption = editorOptions.value.defaultVlessEncryption
       if (configType === 'WireGuard' && protoExtra.wgMtu == null) protoExtra.wgMtu = editorOptions.value.defaultWireGuardMtu
-      const transportExtra = parseObject(details.transportExtra)
       const nextForm = {
         ...details,
         configType,
@@ -429,7 +440,8 @@ export function useProfiles(options: ApiServices & {
       const nextGroupChildIds = parseList(protoExtra.childItems)
       const advancedDetails = {
         ...details,
-        protoExtra: typeof details.protoExtra === 'string' ? JSON.stringify(protoExtra) : protoExtra,
+        protoExtra: JSON.stringify(protoExtra),
+        transportExtra: JSON.stringify(transportExtra),
       }
       editingProfileId.value = profileId
       profileForm.value = nextForm
@@ -448,12 +460,27 @@ export function useProfiles(options: ApiServices & {
     const targetId = editingProfileId.value
     try {
       const advanced = JSON.parse(profileAdvancedJson.value || '{}')
+      const advancedProtoExtra = parseObject(advanced.protoExtra)
+      const advancedTransportExtra = parseObject(advanced.transportExtra)
+      const currentProtoExtra = profileForm.value.protoExtra || {}
+      const currentTransportExtra = profileForm.value.transportExtra || {}
+      // mergeFormEdits keeps compatibility fields from the advanced JSON. The
+      // extra keys still need case-insensitive reconciliation so one canonical
+      // property is sent instead of both its PascalCase and camelCase twins.
       const protoExtra = normalizeNullableNumbers(
-        mergeFormEdits(parseObject(advanced.protoExtra), profileForm.value.protoExtra || {}, initialProtoExtra),
+        reconcileProfileExtraKeys(
+          mergeFormEdits(advancedProtoExtra, currentProtoExtra, initialProtoExtra),
+          'protocol',
+          { advanced: advancedProtoExtra, current: currentProtoExtra, initial: initialProtoExtra },
+        ),
         ['upMbps', 'downMbps', 'wgMtu', 'insecureConcurrency'],
       )
       const transportExtra = normalizeProfileTransportExtra(
-        mergeFormEdits(parseObject(advanced.transportExtra), profileForm.value.transportExtra || {}, initialTransportExtra),
+        reconcileProfileExtraKeys(
+          mergeFormEdits(advancedTransportExtra, currentTransportExtra, initialTransportExtra),
+          'transport',
+          { advanced: advancedTransportExtra, current: currentTransportExtra, initial: initialTransportExtra },
+        ),
       )
       const isGroupProfile = ['PolicyGroup', 'ProxyChain'].includes(profileForm.value.configType)
       const isCustomFileProfile = ['Custom', 'Outbound'].includes(profileForm.value.configType)
@@ -473,6 +500,19 @@ export function useProfiles(options: ApiServices & {
         for (const field of ['groupType', 'childItems', 'subChildItems', 'filter', 'multipleLoad']) delete protoExtra[field]
       }
       const normalizedProtoExtra = normalizeProfileProtocolExtra(protoExtra, profileForm.value.configType)
+      // An untouched form must not churn the stored representation. These
+      // fields are semantically false/null/empty in the API, and preserving the
+      // imported spelling keeps a no-op save from rewriting the profile.
+      const advancedAllowInsecure = typeof advanced.allowInsecure === 'string' ? advanced.allowInsecure : ''
+      const allowInsecure = profileForm.value.allowInsecure === (advancedAllowInsecure === 'true')
+        ? advancedAllowInsecure
+        : profileForm.value.allowInsecure ? 'true' : 'false'
+      const muxEnabled = Boolean(profileForm.value.muxEnabled) === Boolean(advanced.muxEnabled)
+        ? advanced.muxEnabled ?? null
+        : Boolean(profileForm.value.muxEnabled)
+      const cert = textOrEmpty(profileForm.value.cert) === textOrEmpty(advanced.cert)
+        ? advanced.cert ?? null
+        : profileForm.value.cert || ''
       const body: Dict = {
         ...advanced,
         configType: profileForm.value.configType,
@@ -486,7 +526,7 @@ export function useProfiles(options: ApiServices & {
           username: profileForm.value.username || '',
           network: canonicalNetwork(profileForm.value.network, editorOptions.value.networks || [], editorOptions.value.defaultNetwork),
           streamSecurity: profileForm.value.streamSecurity || '',
-          allowInsecure: profileForm.value.allowInsecure ? 'true' : 'false',
+          allowInsecure,
           sni: profileForm.value.sni || '',
           alpn: profileForm.value.alpn || '',
           fingerprint: profileForm.value.fingerprint || '',
@@ -494,12 +534,12 @@ export function useProfiles(options: ApiServices & {
           shortId: profileForm.value.shortId || '',
           spiderX: profileForm.value.spiderX || '',
           mldsa65Verify: profileForm.value.mldsa65Verify || '',
-          cert: profileForm.value.cert || '',
+          cert,
           certSha: profileForm.value.certSha || '',
           echConfigList: profileForm.value.echConfigList || '',
           verifyPeerCertByName: profileForm.value.verifyPeerCertByName || '',
           finalmask: profileForm.value.finalmask || '',
-          muxEnabled: Boolean(profileForm.value.muxEnabled),
+          muxEnabled,
           transportExtra: JSON.stringify(transportExtra),
         } : {}),
         ...(isCustomFileProfile ? {
@@ -535,6 +575,7 @@ export function useProfiles(options: ApiServices & {
   }
 
   function parseObject(value: unknown): Dict {
+    if (value && typeof value === 'object' && !Array.isArray(value)) return { ...(value as Dict) }
     if (typeof value !== 'string' || !value.trim()) return {}
     try {
       const parsed = JSON.parse(value)
@@ -544,6 +585,10 @@ export function useProfiles(options: ApiServices & {
 
   function cloneObject(value: unknown): Dict {
     return JSON.parse(JSON.stringify(value || {}))
+  }
+
+  function textOrEmpty(value: unknown): string {
+    return value == null ? '' : String(value)
   }
 
   function parseList(value: unknown): string[] {

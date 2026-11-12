@@ -11,7 +11,7 @@ UI to start. Nova pairs with a `v2rayN.WebAPI` build that exposes the required c
 
 <p align="center">
   <img src="docs/screenshots/en-US/desktop/nodes.png" width="70%" alt="Nova desktop node list">
-  <img src="docs/screenshots/en-US/mobile/nodes.png" width="22%" alt="Nova mobile node list">
+  <img src="docs/screenshots/en-US/mobile/nodes-viewport.png" width="22%" alt="Nova mobile node list">
 </p>
 
 ## Highlights

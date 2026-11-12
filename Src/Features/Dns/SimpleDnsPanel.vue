@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import UiIcon from '../../Components/Material/UiIcon.vue'
 import FormField from './FormField.vue'
 import { codeEditor as vCodeEditor } from '../../UI/codeEditor'
+import { vDetailsMotion } from '../../UI/detailsMotion'
 
 const props = defineProps<{
   form: Record<string, any>
@@ -99,19 +100,21 @@ function saveSimple() {
         </div>
       </fieldset>
 
-      <details class="disclosure json-disclosure" open>
+      <details v-details-motion class="disclosure json-disclosure" open>
         <summary>{{ t('dns.jsonEditor') }}</summary>
-        <p class="field-hint">{{ t('dns.jsonCompatibilityHint') }} · {{ t('polish.editorKeyboard') }}</p>
-        <textarea
-          v-code-editor="saveSimple"
-          class="code-area dns-code"
-          :value="raw"
-          :disabled="locked"
-          :aria-label="t('dns.jsonEditor')"
-          :aria-invalid="Boolean(jsonError)"
-          spellcheck="false"
-          @input="updateRaw"
-        ></textarea>
+        <div class="ui-details-content">
+          <p class="field-hint">{{ t('dns.jsonCompatibilityHint') }} · {{ t('polish.editorKeyboard') }}</p>
+          <textarea
+            v-code-editor="saveSimple"
+            class="code-area dns-code"
+            :value="raw"
+            :disabled="locked"
+            :aria-label="t('dns.jsonEditor')"
+            :aria-invalid="Boolean(jsonError)"
+            spellcheck="false"
+            @input="updateRaw"
+          ></textarea>
+        </div>
       </details>
 
       <div class="save-bar">
