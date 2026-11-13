@@ -6,7 +6,11 @@ import ActionMenu, { type ActionMenuItem } from '../../Components/Material/Actio
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../../App/context'
+import { planDragPosition } from '../../Composables/movementOrder'
+import type { Dict } from '../../Composables/types'
 import { scrollDisclosureIntoView } from '../../UI/detailsMotion'
+import { useListDragSort } from '../../UI/listDragSort'
+import { useTableDragSort } from '../../UI/tableDragSort'
 import { usePageRequests } from '../../UI/useUiRequests'
 import { vScrollShadow } from '../../UI/scrollShadow'
 import RoutingRawEditor from './RoutingRawEditor.vue'
@@ -23,6 +27,50 @@ const hasSelected = computed(() => state.selectedRuleIds.length > 0)
 const hasUrl = computed(() => Boolean(state.selectedRoute?.url?.trim()))
 const directions = ['top', 'up', 'down', 'bottom'] as const
 const expandedRuleIds = ref<string[]>([])
+const ruleTableShell = ref<HTMLElement | null>(null)
+const ruleCards = ref<HTMLElement | null>(null)
+const RULE_COLSPAN = 14
+
+const tableDrag = useTableDragSort({
+  container: ruleTableShell,
+  rowSelector: '[data-rule-id]',
+  getVisibleIds: () => state.routingRules.map((rule: Dict) => rule.id),
+  onDrop: (draggedId, targetId, after) => {
+    const position = planDragPosition(
+      state.routingRules.map((rule: Dict) => rule.id),
+      draggedId,
+      targetId,
+      after,
+    )
+    if (position !== null) void actions.moveRoutingRuleToPosition(draggedId, position)
+  },
+})
+const draggingRuleId = tableDrag.draggingId
+const dragPlaceholderIndex = tableDrag.placeholderIndex
+const dragRowHeight = tableDrag.rowHeight
+const isDragSorting = tableDrag.isDragging
+const beginRuleDrag = tableDrag.begin
+const displayedRules = computed(() => draggingRuleId.value
+  ? state.routingRules.filter((rule: Dict) => rule.id !== draggingRuleId.value)
+  : state.routingRules)
+
+const cardDrag = useListDragSort({
+  container: ruleCards,
+  itemSelector: '.rule-card',
+  getIds: () => state.routingRules.map((rule: Dict) => rule.id),
+  onReorder: (ids) => {
+    const byId = new Map(state.routingRules.map((rule: Dict) => [rule.id, rule]))
+    const next = ids.map((id) => byId.get(id)).filter((rule): rule is Dict => Boolean(rule))
+    if (next.length === state.routingRules.length) state.routingRules = next
+  },
+  onDrop: (ids, draggedId) => {
+    const position = ids.indexOf(draggedId)
+    if (position >= 0) void actions.moveRoutingRuleToPosition(draggedId, position)
+  },
+  onCancel: () => void actions.loadRules(),
+})
+const draggingCardId = cardDrag.draggingId
+const beginRuleCardDrag = cardDrag.begin
 
 const importItems = computed<ActionMenuItem[]>(() => [
   { id: 'append', label: t('routing.append'), icon: 'check', checked: state.appendRules },
@@ -120,8 +168,6 @@ function rowMenu(rule: Record<string, any>): ActionMenuItem[] {
   const deleting = Boolean(state.deletingSelectedRules) || state.deletingRuleId === rule.id
   return [
     { id: 'edit', label: t('common.edit'), icon: 'edit' },
-    { id: 'sep-move', separator: true },
-    ...directions.map((direction) => ({ id: `move-${direction}`, label: t(`nodes.${direction}`), icon: `move-${direction}` })),
     { id: 'sep-delete', separator: true },
     { id: 'delete', label: t('common.delete'), icon: 'delete', danger: true, disabled: deleting },
   ]
@@ -130,10 +176,6 @@ function rowMenu(rule: Record<string, any>): ActionMenuItem[] {
 function chooseRow(rule: Record<string, any>, id: string) {
   if (id === 'edit') actions.openEditRoutingRule(rule)
   else if (id === 'delete') void actions.removeRoutingRule(rule)
-  else if (id.startsWith('move-')) {
-    const direction = id.slice(5)
-    void actions.moveRoutingRule(rule, direction[0].toUpperCase() + direction.slice(1))
-  }
 }
 </script>
 
@@ -167,13 +209,14 @@ function chooseRow(rule: Record<string, any>, id: string) {
 
     <p class="field-hint">{{ t('routing.importParserHint') }}</p>
 
-    <div v-scroll-shadow class="table-shell desktop-only rules-table-shell sticky-actions" tabindex="0">
+    <div ref="ruleTableShell" v-scroll-shadow class="table-shell desktop-only rules-table-shell sticky-actions" tabindex="0">
       <table class="data-table rules-table">
         <thead>
           <tr>
             <th class="cell-check">
               <UiCheckbox :model-value="allSelected" :indeterminate="selectionIndeterminate" :aria-label="t('common.selectAll')" @change="actions.toggleAllRules" />
             </th>
+            <th class="cell-drag"><span class="visually-hidden">{{ t('nodes.dragToSort') }}</span></th>
             <th>{{ t('routing.remarks') }}</th>
             <th>{{ t('routing.ruleType') }}</th>
             <th>{{ t('routing.outboundTag') }}</th>
@@ -189,36 +232,69 @@ function chooseRow(rule: Record<string, any>, id: string) {
           </tr>
         </thead>
         <tbody>
+          <template v-for="(rule, index) in displayedRules" :key="rule.id">
+            <tr
+              v-if="isDragSorting && dragPlaceholderIndex === index"
+              class="table-drag-placeholder"
+              data-drag-row-key="__placeholder__"
+              aria-hidden="true"
+            >
+              <td :colspan="RULE_COLSPAN">
+                <div class="table-drag-placeholder-box" :style="{ height: `${Math.max(dragRowHeight - 4, 0)}px` }" />
+              </td>
+            </tr>
+            <tr
+              :data-rule-id="rule.id"
+              :data-drag-row-key="rule.id"
+              :class="{ 'is-selected': state.selectedRuleIds.includes(rule.id) }"
+              :aria-busy="state.deletingRuleId === rule.id"
+              @dblclick="actions.openEditRoutingRule(rule)"
+            >
+              <td class="cell-check" @click.stop @dblclick.stop>
+                <UiCheckbox :model-value="state.selectedRuleIds.includes(rule.id)" :aria-label="rule.remarks || fallbackName(rule)" @change="toggleRule(rule.id)" />
+              </td>
+              <td class="cell-drag" @click.stop @dblclick.stop>
+                <button
+                  type="button"
+                  class="icon-btn icon-btn-small drag-handle"
+                  :aria-label="t('nodes.dragToSort')"
+                  :title="t('nodes.dragToSort')"
+                  @pointerdown="beginRuleDrag($event, rule.id)"
+                >
+                  <UiIcon name="drag-handle" :size="16" />
+                </button>
+              </td>
+              <td class="name-cell">
+                <span class="status-dot" :class="rule.enabled === false ? '' : 'is-on'" :title="rule.enabled === false ? t('common.disabled') : t('common.enabled')"></span>
+                <span class="truncate" :title="rule.remarks || fallbackName(rule)">{{ rule.remarks || fallbackName(rule) }}</span>
+              </td>
+              <td><span class="badge">{{ rule.ruleType || '—' }}</span></td>
+              <td>{{ rule.outboundTag || '—' }}</td>
+              <td :title="values(rule, 'inboundTag')">{{ values(rule, 'inboundTag') }}</td>
+              <td :title="values(rule, 'domain')">{{ values(rule, 'domain') }}</td>
+              <td :title="values(rule, 'ip')">{{ values(rule, 'ip') }}</td>
+              <td>{{ rule.port || '—' }}</td>
+              <td>{{ rule.network || '—' }}</td>
+              <td :title="values(rule, 'protocol')">{{ values(rule, 'protocol') }}</td>
+              <td :title="values(rule, 'process')">{{ values(rule, 'process') }}</td>
+              <td class="matcher-cell" :title="matchers(rule)">{{ matchers(rule) }}</td>
+              <td class="cell-actions" @dblclick.stop>
+                <ActionMenu :items="rowMenu(rule)" :label="t('nodes.actions')" @select="chooseRow(rule, $event)" />
+              </td>
+            </tr>
+          </template>
           <tr
-            v-for="rule in state.routingRules"
-            :key="rule.id"
-            :class="{ 'is-selected': state.selectedRuleIds.includes(rule.id) }"
-            :aria-busy="state.deletingRuleId === rule.id"
-            @dblclick="actions.openEditRoutingRule(rule)"
+            v-if="isDragSorting && dragPlaceholderIndex >= displayedRules.length"
+            class="table-drag-placeholder"
+            data-drag-row-key="__placeholder__"
+            aria-hidden="true"
           >
-            <td class="cell-check" @click.stop @dblclick.stop>
-              <UiCheckbox :model-value="state.selectedRuleIds.includes(rule.id)" :aria-label="rule.remarks || fallbackName(rule)" @change="toggleRule(rule.id)" />
-            </td>
-            <td class="name-cell">
-              <span class="status-dot" :class="rule.enabled === false ? '' : 'is-on'" :title="rule.enabled === false ? t('common.disabled') : t('common.enabled')"></span>
-              <span class="truncate" :title="rule.remarks || fallbackName(rule)">{{ rule.remarks || fallbackName(rule) }}</span>
-            </td>
-            <td><span class="badge">{{ rule.ruleType || '—' }}</span></td>
-            <td>{{ rule.outboundTag || '—' }}</td>
-            <td :title="values(rule, 'inboundTag')">{{ values(rule, 'inboundTag') }}</td>
-            <td :title="values(rule, 'domain')">{{ values(rule, 'domain') }}</td>
-            <td :title="values(rule, 'ip')">{{ values(rule, 'ip') }}</td>
-            <td>{{ rule.port || '—' }}</td>
-            <td>{{ rule.network || '—' }}</td>
-            <td :title="values(rule, 'protocol')">{{ values(rule, 'protocol') }}</td>
-            <td :title="values(rule, 'process')">{{ values(rule, 'process') }}</td>
-            <td class="matcher-cell" :title="matchers(rule)">{{ matchers(rule) }}</td>
-            <td class="cell-actions" @dblclick.stop>
-              <ActionMenu :items="rowMenu(rule)" :label="t('nodes.actions')" @select="chooseRow(rule, $event)" />
+            <td :colspan="RULE_COLSPAN">
+              <div class="table-drag-placeholder-box" :style="{ height: `${dragRowHeight}px` }" />
             </td>
           </tr>
           <tr v-if="!state.routingRules.length">
-            <td colspan="13" class="empty-cell">
+            <td :colspan="RULE_COLSPAN" class="empty-cell">
               <div class="empty-state">
                 <div class="empty-icon"><UiIcon name="layers" /></div>
                 <strong>{{ status.reads ? t('common.loading') : t('common.empty') }}</strong>
@@ -229,12 +305,13 @@ function chooseRow(rule: Record<string, any>, id: string) {
       </table>
     </div>
 
-    <div class="mobile-only mobile-card-list rules-card-list">
+    <div ref="ruleCards" class="mobile-only mobile-card-list rules-card-list">
       <article
         v-for="rule in state.routingRules"
         :key="rule.id"
+        :data-list-drag-id="rule.id"
         class="mobile-card rule-card"
-        :class="{ 'is-selected': state.selectedRuleIds.includes(rule.id), 'is-expanded': isRuleExpanded(rule.id) }"
+        :class="{ 'is-selected': state.selectedRuleIds.includes(rule.id), 'is-expanded': isRuleExpanded(rule.id), 'is-drag-source': draggingCardId === rule.id }"
         :aria-busy="state.deletingRuleId === rule.id"
         @click="toggleRuleDetails(rule.id, $event)"
       >
@@ -260,6 +337,17 @@ function chooseRow(rule: Record<string, any>, id: string) {
           </span>
           <span @click.stop>
             <ActionMenu :items="rowMenu(rule)" :label="t('nodes.actions')" @select="chooseRow(rule, $event)" />
+          </span>
+          <span class="rule-card-drag" @click.stop>
+            <button
+              type="button"
+              class="icon-btn icon-btn-small drag-handle"
+              :aria-label="t('nodes.dragToSort')"
+              :title="t('nodes.dragToSort')"
+              @pointerdown="beginRuleCardDrag($event, rule.id)"
+            >
+              <UiIcon name="drag-handle" :size="16" />
+            </button>
           </span>
         </div>
         <div v-if="isRuleExpanded(rule.id)" :id="`rule-details-${rule.id}`" class="meta-grid rule-meta">
@@ -368,6 +456,29 @@ function chooseRow(rule: Record<string, any>, id: string) {
   min-width: 64px;
 }
 
+.rules-table .cell-drag {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  padding-inline: 4px;
+  overflow: visible;
+  text-align: center;
+}
+
+.rules-table .drag-handle,
+.rule-card-drag .drag-handle {
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.rules-table .drag-handle:active,
+.rule-card-drag .drag-handle:active {
+  cursor: grabbing;
+}
+
 .rules-table th {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -389,6 +500,19 @@ function chooseRow(rule: Record<string, any>, id: string) {
 
 .rule-card {
   cursor: pointer;
+}
+
+.rule-card.is-drag-source {
+  opacity: 0;
+}
+
+.rule-card-drag {
+  flex: 0 0 auto;
+}
+
+.list-drag-ghost {
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 36%, transparent);
+  box-shadow: 0 14px 24px color-mix(in srgb, var(--md-sys-color-shadow) 32%, transparent);
 }
 
 .rule-status {

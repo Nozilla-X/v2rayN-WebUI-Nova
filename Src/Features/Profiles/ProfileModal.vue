@@ -26,7 +26,7 @@ const isGroup = computed(() => groupConfigTypes.includes(protocol.value))
 const isCustomConfig = computed(() => ['Custom', 'Outbound'].includes(protocol.value))
 const singboxOnly = computed<string[]>(() => state.editorOptions.singboxOnlyConfigTypes || [])
 const supportsTransport = computed(() => !isCustomConfig.value
-  && !['Hysteria2', 'TUIC', 'WireGuard', 'Anytls', 'Naive'].includes(protocol.value))
+  && !['Hysteria2', 'TUIC', 'WireGuard', 'Anytls', 'Naive', 'MASQUE'].includes(protocol.value))
 
 const streamSecurityOptions = computed(() => optionValues(
   (state.editorOptions.streamSecurityTypes || []).filter((security: string) =>
@@ -48,9 +48,22 @@ watch(
   () => [state.showProfileForm, protocol.value] as const,
   ([isOpen, configType], previous) => {
     if (!isOpen) return
+    if (!form.value.protoExtra) form.value.protoExtra = {}
     if (singboxOnly.value.includes(configType)) form.value.coreType = 'sing_box'
     if (['Custom', 'Outbound'].includes(configType) && !form.value.coreType) {
       form.value.coreType = state.editorOptions.coreTypes?.[0] || ''
+    }
+    if (['PolicyGroup', 'ProxyChain'].includes(configType)
+      && !['Xray', 'sing_box'].includes(String(form.value.coreType || ''))) {
+      form.value.coreType = 'Xray'
+    }
+    // ServiceLib rejects SS saves whose method is empty, and has no default of
+    // its own. Seed the dropdown from the methods the selected core supports.
+    if (configType === 'Shadowsocks' && !form.value.protoExtra.ssMethod) {
+      form.value.protoExtra.ssMethod = shadowsocksMethods.value[0] || ''
+    }
+    if (configType === 'TUIC' && !form.value.protoExtra.congestionControl) {
+      form.value.protoExtra.congestionControl = state.editorOptions.tuicCongestionControls?.[0] || ''
     }
     if (previous?.[0] && configType !== previous[1]) {
       state.profileAdvancedJson = canonicalizeProtocolChange(form.value, state.profileAdvancedJson, state.editorOptions)
@@ -85,7 +98,7 @@ function close() {
         <fieldset v-if="isCustomConfig" class="form-section">
           <legend class="section-title"><h3>{{ t('nodes.customConfiguration') }}</h3></legend>
           <div class="field-row">
-            <label v-if="protocol === 'Custom'" class="check">
+            <label v-if="protocol === 'Custom'" class="check check-field">
               <UiCheckbox v-model="form.displayLog" />
               <span>{{ t('nodes.displayLog') }}</span>
             </label>
@@ -93,7 +106,7 @@ function close() {
               <span class="field-label">{{ t('nodes.preSocksPort') }}</span>
               <input v-model.number="form.preSocksPort" type="number" min="0" max="65535" />
             </label>
-            <label v-if="protocol === 'Outbound'" class="check">
+            <label v-if="protocol === 'Outbound'" class="check check-field">
               <UiCheckbox v-model="form.protoExtra.isSingboxEndpoint" />
               <span>{{ t('nodes.singboxEndpoint') }}</span>
             </label>
@@ -144,6 +157,14 @@ function close() {
   margin: 0;
   padding: 0;
   border: 0;
+}
+
+/* Keep a lone checkbox on the same baseline as the labeled inputs beside it:
+   matching the control height and bottom-aligning the box centres its label
+   with the input text. */
+.check-field {
+  align-self: end;
+  min-height: var(--nova-field-height);
 }
 
 .advanced-editor {

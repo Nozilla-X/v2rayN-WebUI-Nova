@@ -153,6 +153,26 @@ test('foldable disclosures animate their content height instead of snapping', as
   assert.match(motion, /@media \(prefers-reduced-motion: no-preference\)[\s\S]*?details(?::not\(\.ui-details-motion\))?::details-content\s*\{[^}]*transition:/)
 })
 
+test('disclosures close through the summary click because details never fires beforetoggle', async () => {
+  const motion = await read('UI/detailsMotion.ts')
+  // beforetoggle is a popover/dialog event; relying on it left the closing
+  // animation unreachable while the opening toggle still animated.
+  assert.doesNotMatch(motion, /addEventListener\('beforetoggle'/)
+  assert.match(motion, /addEventListener\('click'/)
+  assert.match(motion, /function onSummaryClick\([\s\S]*?event\.preventDefault\(\)[\s\S]*?details\.open = true[\s\S]*?animateOpen/)
+  assert.match(motion, /function onSummaryClick\([\s\S]*?animateClose/)
+  assert.match(motion, /function animateClose\([\s\S]*?details\.open = false/)
+  assert.match(motion, /prefersReducedMotion\(\)[\s\S]*?details\.open = false/)
+})
+
+test('subscription group switches animate the replaced node list', async () => {
+  const page = await read('Pages/NodesPage.vue')
+  assert.match(page, /watch\(\(\) => state\.groupSwitchRevision/)
+  assert.match(page, /<div class="nodes-group-view" :class="\{ 'is-group-entering': groupSwitching \}">/)
+  assert.match(page, /@keyframes nodes-group-enter/)
+  assert.match(page, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.nodes-group-view\.is-group-entering\s*\{\s*animation:\s*none/)
+})
+
 test('reduced motion removes spatial movement without flattening colour feedback', async () => {
   const [base, tokens, motion, layout, overlays, buttons] = await Promise.all([
     read('Design/base.css'),

@@ -33,6 +33,21 @@ test('dragging renders a dashed placeholder and flips the remaining rows', async
   assert.match(dragSort, /event\.key !== 'Escape'/)
 })
 
+test('the drag ghost clips to the scrollport and keeps the columns stable', async () => {
+  const dragSort = await source('UI/tableDragSort.ts')
+  // The lifted row must not carry hidden columns past the table border.
+  assert.match(dragSort, /container\.clientWidth/)
+  assert.match(dragSort, /container\.clientLeft/)
+  assert.match(dragSort, /ghostTable\.style\.marginLeft/)
+  assert.doesNotMatch(dragSort, /scale\(1\.0/)
+  // Removing a wide row lets auto layout resize the remaining columns.
+  assert.match(dragSort, /freezeTableLayout\(/)
+  assert.match(dragSort, /restoreLayout\?\.\(\)/)
+
+  const collections = await source('Design/collections.css')
+  assert.match(collections, /\.table-drag-ghost td\.cell-actions\s*\{[^}]*position:\s*sticky/)
+})
+
 test('the context menu no longer owns row reordering', async () => {
   const menu = await source('Features/Nodes/NodeContextMenu.vue')
   for (const id of ['move-top', 'move-up', 'move-down', 'move-bottom', 'position']) {

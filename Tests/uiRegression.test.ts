@@ -95,6 +95,23 @@ test('the all-group selection is sent explicitly instead of using the backend cu
   assert.equal(requests[2], '/api/profiles?subscriptionId=kitty&filter=hk')
 })
 
+test('a completed subscription-group switch bumps the list animation revision', async () => {
+  const harness = createSourceHarness()
+  const requests = []
+  const profiles = createProfiles(harness, {
+    request: async (route, init) => { requests.push([route, init.body]); return { success: true } },
+    data: async (route) => { requests.push(route); return [{ indexId: 'node-1' }] },
+  })
+  const before = profiles.nodesPageState.groupSwitchRevision
+  await profiles.nodesPageActions.changeGroup('group-a')
+  assert.equal(profiles.nodesPageState.groupSwitchRevision, before + 1)
+  // Re-selecting the group that is already current is not a switch.
+  await profiles.nodesPageActions.changeGroup('group-a')
+  assert.equal(profiles.nodesPageState.groupSwitchRevision, before + 1)
+  assert.deepEqual(requests[0], ['/api/profile-groups/current', { subscriptionId: 'group-a' }])
+  assert.match(requests[1], /^\/api\/profiles\?subscriptionId=group-a/)
+})
+
 test('canceling a pending node editor load cannot reopen a dialog with previously fetched credentials', async () => {
   const harness = createSourceHarness()
   let cancelCatalog

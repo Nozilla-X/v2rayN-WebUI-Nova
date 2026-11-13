@@ -158,6 +158,13 @@
   align-items: start;
 }
 
+/* A floating-label select is one 56px control, while a labeled field is a
+   label plus that same control. Bottom-aligning the select keeps its box level
+   with neighboring inputs instead of floating a label-row too high. */
+.field-row > .ui-select {
+  align-self: end;
+}
+
 .field-wide {
   grid-column: 1 / -1;
 }

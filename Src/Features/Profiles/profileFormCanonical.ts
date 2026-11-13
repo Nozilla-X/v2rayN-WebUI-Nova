@@ -1,9 +1,9 @@
-import type { Dict } from '../../Composables/types'
-import { reconcileProfileExtraKeys } from '../../Composables/profilePayloads'
+import type { Dict } from '../../Composables/types.ts'
+import { multipleLoadEnum, multipleLoadName, reconcileProfileExtraKeys } from '../../Composables/profilePayloads.ts'
 
 export const groupConfigTypes = ['PolicyGroup', 'ProxyChain']
 export const realityConfigTypes = ['VLESS', 'Trojan', 'Anytls']
-const transportlessConfigTypes = ['Custom', 'Outbound', 'Hysteria2', 'TUIC', 'WireGuard', 'Anytls', 'Naive', ...groupConfigTypes]
+const transportlessConfigTypes = ['Custom', 'Outbound', 'Hysteria2', 'TUIC', 'WireGuard', 'Anytls', 'Naive', 'MASQUE', ...groupConfigTypes]
 const groupProtocolExtraFields = ['groupType', 'childItems', 'subChildItems', 'filter', 'multipleLoad']
 const protocolExtraOwners: Record<string, string[]> = {
   alterId: ['VMess'], vmessSecurity: ['VMess'], flow: ['VLESS', 'Trojan'], vlessEncryption: ['VLESS'],
@@ -11,6 +11,7 @@ const protocolExtraOwners: Record<string, string[]> = {
   wgPublicKey: ['WireGuard'], wgPresharedKey: ['WireGuard'], wgInterfaceAddress: ['WireGuard'],
   wgReserved: ['WireGuard'], wgMtu: ['WireGuard'], wgDns: ['WireGuard'],
   isSingboxEndpoint: ['Outbound'],
+  masquePath: ['MASQUE'], masqueHeaders: ['MASQUE'],
   salamanderPass: ['Hysteria2'], upMbps: ['Hysteria2'], downMbps: ['Hysteria2'], ports: ['Hysteria2'],
   hopInterval: ['Hysteria2'], hy2RealmUrl: ['Hysteria2'], geckoMinPacketSize: ['Hysteria2'], geckoMaxPacketSize: ['Hysteria2'],
   congestionControl: ['TUIC', 'Naive'], insecureConcurrency: ['Anytls', 'Naive'], naiveQuic: ['Naive'],
@@ -59,6 +60,12 @@ export function canonicalizeProtocolChange(form: Dict, advancedJson: string, edi
   } else if (configType !== 'PolicyGroup') {
     delete protocolExtra.multipleLoad
     delete advancedProtocolExtra.multipleLoad
+  } else {
+    // The editor shows the enum names from /api/editor-options; the stored
+    // protoExtra JSON must use the numeric EMultipleLoad value. Keep the
+    // advanced-JSON view on the stored representation as well.
+    protocolExtra.multipleLoad = multipleLoadName(protocolExtra.multipleLoad)
+    advancedProtocolExtra.multipleLoad = multipleLoadEnum(protocolExtra.multipleLoad)
   }
 
   if (!realityConfigTypes.includes(configType) && String(form.streamSecurity).toLowerCase() === 'reality') {

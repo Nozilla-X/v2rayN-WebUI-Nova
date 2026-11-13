@@ -23,6 +23,7 @@ interface DragSession {
   rowHeight: number
   lastIndex: number
   ghost?: HTMLElement
+  restoreLayout?: () => void
   raf: number
   reduceMotion: boolean
 }
@@ -81,6 +82,11 @@ export function useTableDragSort(options: TableDragSortOptions) {
   }
 
   function activate(s: DragSession) {
+    // Taking the row out of an auto-laid-out table lets the remaining content
+    // resize its columns. Freeze the current widths first so the table under
+    // the lifted row does not jump sideways while dragging.
+    const table = s.row.closest('table')
+    if (table) s.restoreLayout = freezeTableLayout(table)
     s.active = true
     draggingId.value = s.rowId
     placeholderIndex.value = Math.max(0, s.lastIndex)
@@ -95,23 +101,64 @@ export function useTableDragSort(options: TableDragSortOptions) {
     })
   }
 
+  /**
+   * Pin the header's rendered column widths for the duration of the drag.
+   * The returned callback restores whatever inline styles were there before.
+   */
+  function freezeTableLayout(table: HTMLTableElement): () => void {
+    const cells = [...table.querySelectorAll<HTMLElement>('thead th')]
+    // Measure everything before touching the cells: writing a width can
+    // re-run auto layout and change the values read later in the loop.
+    const widths = cells.map((cell) => cell.getBoundingClientRect().width)
+    const previous = cells.map((cell) => ({
+      width: cell.style.width,
+      boxSizing: cell.style.boxSizing,
+    }))
+    const layout = table.style.tableLayout
+    cells.forEach((cell, index) => {
+      cell.style.boxSizing = 'border-box'
+      cell.style.width = `${widths[index]}px`
+    })
+    table.style.tableLayout = 'fixed'
+    return () => {
+      table.style.tableLayout = layout
+      cells.forEach((cell, index) => {
+        cell.style.width = previous[index].width
+        cell.style.boxSizing = previous[index].boxSizing
+      })
+    }
+  }
+
   function createGhost(row: HTMLElement): HTMLElement {
     const table = row.closest('table')
     const rect = row.getBoundingClientRect()
     const tableRect = table?.getBoundingClientRect()
+    // The ghost is clipped to what the scrollport currently shows: a table
+    // wider than its shell must not carry the hidden columns past the rounded
+    // border. The inner table keeps the full width and is shifted by the
+    // scroll offset so its visible columns stay aligned with the real row.
+    const container = options.container.value
+    const containerRect = container?.getBoundingClientRect()
+    const viewportLeft = container && containerRect
+      ? containerRect.left + container.clientLeft
+      : (tableRect?.left ?? rect.left)
+    const viewportWidth = container
+      ? container.clientWidth
+      : (tableRect?.width ?? rect.width)
     const widths = table
       ? [...table.querySelectorAll<HTMLElement>('thead th')].map((cell) => cell.getBoundingClientRect().width)
       : []
     const shell = document.createElement('div')
     shell.className = 'table-drag-ghost-shell'
     shell.style.top = `${rect.top}px`
-    shell.style.left = `${tableRect?.left ?? rect.left}px`
-    shell.style.width = `${tableRect?.width ?? rect.width}px`
+    shell.style.left = `${viewportLeft}px`
+    shell.style.width = `${viewportWidth}px`
     shell.setAttribute('aria-hidden', 'true')
 
     const ghostTable = document.createElement('table')
     ghostTable.className = 'data-table table-drag-ghost'
-    ghostTable.style.width = '100%'
+    ghostTable.style.width = `${tableRect?.width ?? rect.width}px`
+    ghostTable.style.marginLeft = `${(tableRect?.left ?? viewportLeft) - viewportLeft}px`
     ghostTable.style.tableLayout = 'fixed'
     const body = document.createElement('tbody')
     const clone = row.cloneNode(true) as HTMLTableRowElement
@@ -135,7 +182,7 @@ export function useTableDragSort(options: TableDragSortOptions) {
   }
 
   function updateGhost(s: DragSession) {
-    if (s.ghost) s.ghost.style.transform = `translate3d(0, ${s.pointerY - s.startY}px, 0) scale(1.015)`
+    if (s.ghost) s.ghost.style.transform = `translate3d(0, ${s.pointerY - s.startY}px, 0)`
   }
 
   /**
@@ -253,6 +300,8 @@ export function useTableDragSort(options: TableDragSortOptions) {
     window.removeEventListener('pointercancel', onPointerCancel)
     window.removeEventListener('keydown', onKeydown, true)
     s.ghost?.remove()
+    s.restoreLayout?.()
+    s.restoreLayout = undefined
     options.container.value?.classList.remove('is-drag-sorting')
     document.body.classList.remove('nova-table-dragging')
     draggingId.value = ''
