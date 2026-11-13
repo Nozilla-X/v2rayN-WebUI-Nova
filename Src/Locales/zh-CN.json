@@ -227,7 +227,6 @@
     "paste": "粘贴",
     "any": "不限",
     "selectAll": "全选",
-    "clearSelection": "清除选择",
     "deleteSelected": "删除所选（{count}）",
     "more": "更多",
     "chooseFromList": "从列表选择",

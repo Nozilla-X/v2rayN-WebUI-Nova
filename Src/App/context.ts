@@ -1,5 +1,5 @@
 import { inject, type ComputedRef, type InjectionKey, type Ref } from 'vue'
-import type { Dict, Translate } from '../Composables/types'
+import type { Dict, ErrorHandler, Notice, Translate } from '../Composables/types'
 import type { ApiClient } from '../Composables/useApi'
 import type { useAppRoute } from '../Composables/useAppRoute'
 import type { useBackend } from '../Composables/useBackend'
@@ -27,6 +27,10 @@ export interface NovaApp {
   t: Translate
   locale: Ref<string>
   api: ApiClient
+  feedback: {
+    showNotice: Notice
+    showError: ErrorHandler
+  }
   route: ReturnType<typeof useAppRoute>
   theme: ReturnType<typeof useTheme>
   backend: ReturnType<typeof useBackend>

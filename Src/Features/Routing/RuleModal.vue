@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UiButton from '../../Components/Material/UiButton.vue'
-import { computed, useId } from 'vue'
+import { computed, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppDialog from '../../Components/Material/AppDialog.vue'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
@@ -15,6 +15,10 @@ const state = app.routing.ruleModalState
 const actions = app.routing.ruleModalActions
 const routingOptions = app.routing.routingOptions
 const formId = useId()
+
+watch(() => state.ruleModalError, (message) => {
+  if (message) app.feedback.showNotice(message, 'error')
+})
 
 const knownRuleTypes = ['ALL', 'Routing', 'DNS']
 const knownTypes = ['field']
@@ -194,10 +198,6 @@ function submit() {
           />
         </div>
       </details>
-
-      <p v-if="state.ruleModalError" class="banner banner-error" role="alert">
-        {{ state.ruleModalError }}
-      </p>
     </form>
 
     <template #actions>

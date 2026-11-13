@@ -383,7 +383,8 @@ const shellReady = computed(() => session.setupStatusReady.value && !session.set
 const pageComponent = computed(() => PAGES[activePage.value])
 
 const appContext: NovaApp = {
-  t, locale, api, route, theme, backend, session, runtime, profiles, subscriptions, routing, dns,
+  t, locale, api, feedback: { showNotice, showError },
+  route, theme, backend, session, runtime, profiles, subscriptions, routing, dns,
   settings, templates, maintenance, logs, events, nodes, requests: uiRequests,
   state: {
     subscriptionProgress, logsPaused, showCorePanel, showBackendPanel, showAppearancePanel, connectionTesting,

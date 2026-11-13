@@ -1,6 +1,7 @@
 # Mobile layout validation
 
-Nova treats mobile as a separate interaction model, not a compressed desktop table.
+Nova treats mobile as a separate interaction model, not a compressed desktop table. The
+normative geometry and scroll rules are in [`layout-spec.md`](layout-spec.md).
 
 ## Contract
 

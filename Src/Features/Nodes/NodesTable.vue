@@ -91,17 +91,19 @@ function preventRangeTextSelection(event: MouseEvent) {
       <thead>
         <tr>
           <th class="cell-check">
-            <UiCheckbox
-              :model-value="state.allVisibleSelected"
-              :indeterminate="selectionIndeterminate"
-              :aria-label="t('common.selected', { count: state.filteredProfiles.length })"
-              @change="actions.toggleAllVisible"
-            />
-            <span
-              v-if="state.selectedIds.length"
-              class="selection-count"
-              :aria-label="t('common.selected', { count: state.selectedIds.length })"
-            >{{ state.selectedIds.length }}</span>
+            <span class="selection-check">
+              <UiCheckbox
+                :model-value="state.allVisibleSelected"
+                :indeterminate="selectionIndeterminate"
+                :aria-label="t('common.selected', { count: state.filteredProfiles.length })"
+                @change="actions.toggleAllVisible"
+              />
+              <span
+                v-if="state.selectedIds.length"
+                class="selection-count"
+                :aria-label="t('common.selected', { count: state.selectedIds.length })"
+              >{{ state.selectedIds.length }}</span>
+            </span>
           </th>
           <th class="cell-drag"><span class="visually-hidden">{{ t('nodes.dragToSort') }}</span></th>
           <th v-if="isVisible('type')" :aria-sort="sortState('ConfigType')">
@@ -354,26 +356,6 @@ function preventRangeTextSelection(event: MouseEvent) {
 .metric-muted {
   color: var(--md-sys-color-on-surface-variant);
   font-variant-numeric: tabular-nums;
-}
-
-.selection-count {
-  position: absolute;
-  top: 5px;
-  inset-inline-start: calc(50% + 9px);
-  display: inline-flex;
-  min-width: 16px;
-  height: 16px;
-  align-items: center;
-  justify-content: center;
-  padding-inline: 4px;
-  border-radius: var(--md-sys-shape-corner-full);
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--md-sys-typescale-weight-semibold);
-  line-height: 1;
-  pointer-events: none;
 }
 
 .protocol-code {
