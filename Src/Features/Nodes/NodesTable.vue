@@ -86,7 +86,7 @@ function preventRangeTextSelection(event: MouseEvent) {
 </script>
 
 <template>
-  <div ref="tableShell" v-scroll-shadow class="table-shell nodes-table-shell">
+  <div ref="tableShell" v-scroll-shadow class="table-shell nodes-table-shell" tabindex="0" :aria-label="t('nodes.title')">
     <table class="data-table profile-table" :style="{ minWidth: `${minTableWidth}px` }">
       <thead>
         <tr>

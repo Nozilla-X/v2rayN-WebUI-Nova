@@ -208,7 +208,7 @@ function chooseRow(rule: Record<string, any>, id: string) {
 
     <p class="field-hint">{{ t('routing.importParserHint') }}</p>
 
-    <div ref="ruleTableShell" v-scroll-shadow class="table-shell desktop-only rules-table-shell sticky-actions" tabindex="0">
+    <div ref="ruleTableShell" v-scroll-shadow class="table-shell desktop-only rules-table-shell sticky-actions" tabindex="0" :aria-label="t('routing.rules')">
       <table class="data-table rules-table">
         <thead>
           <tr>

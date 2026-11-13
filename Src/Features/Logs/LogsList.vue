@@ -43,7 +43,7 @@ function message(log: Dict) {
 
 <template>
   <div class="table-shell log-table-shell" :aria-busy="Boolean(status.reads)">
-    <div class="log-table-desktop desktop-only" @scroll.passive="emit('scroll')">
+    <div class="log-table-desktop desktop-only" tabindex="0" :aria-label="t('logs.title')" @scroll.passive="emit('scroll')">
       <table class="data-table log-table">
         <thead>
           <tr>
@@ -91,7 +91,7 @@ function message(log: Dict) {
       </table>
     </div>
 
-    <div class="mobile-only log-mobile" @scroll.passive="emit('scroll')">
+    <div class="mobile-only log-mobile" tabindex="0" :aria-label="t('logs.title')" @scroll.passive="emit('scroll')">
       <div class="mobile-select-all">
         <label class="check">
           <span class="selection-check">

@@ -601,7 +601,7 @@
     "remarks": "配置名称",
     "enabled": "启用自定义 DNS",
     "normalDns": "常规 DNS",
-    "domainStrategy": "Outbound Freedom domainStrategy",
+    "domainStrategy": "Outbound Freedom 域名解析策略",
     "domainDnsAddress": "Outbound 域名解析地址",
     "saveCoreDns": "保存 {core} DNS",
     "jsonEditor": "完整 DNS JSON",

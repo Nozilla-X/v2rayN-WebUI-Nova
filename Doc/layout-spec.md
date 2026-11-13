@@ -23,8 +23,10 @@ Nova is an application shell, not a scrolling document.
   replace it with a private `max-width`; fill the workspace or use the page grid.
 - A page MAY contain an internally scrolling table or list. That scroller MUST be an explicit
   component boundary (`.table-shell` or a documented list), not an accidental overflow.
-- Horizontal scrolling is allowed only inside a `.table-shell`. The page itself MUST NEVER
-  scroll sideways.
+- The page itself MUST NEVER scroll sideways. Data tables scroll horizontally inside
+  `.table-shell`; compact control strips (tabs, group chips) MAY scroll horizontally inside
+  their own component and MUST expose a scroll cue. No other surface may introduce page-level
+  horizontal overflow.
 - Dialogs MAY lock body scrolling through `UI/dialogLayer.ts`. No other component may
   manipulate body scroll.
 - `calc(100dvh - …)` page heights, fixed footers and negative margins used to "fit" content are
@@ -90,16 +92,22 @@ Reference implementation: `Src/Pages/RoutingPage.vue` (`.routing-workspace`) and
   `--nova-table-row-height`; cells MUST NOT set their own heights.
 - The action column MAY be pinned with `.table-shell.sticky-actions` only when the shell also
   uses `v-scroll-shadow`. If the pane is too narrow to keep preceding columns readable, the
-  pin MUST be disabled with a container query (see `.rules-table-shell` at `1400px`).
+  pin MUST be disabled with a container query or an equivalent width condition when the pane
+  tracks the viewport (see `.rules-table-shell` at `1400px` and the subscriptions table at
+  `1200px`). The nodes table keeps its row actions pinned at every desktop width because the
+  page switches to cards below `860px`; it is the documented exception.
 - A pane whose height would jump when data changes MUST declare a stable shell height
   (`height: clamp(320px, 52dvh, 560px)` in the routing rules panel). Do **not** use
   `max-height` for that pane.
-- Empty and loading states render inside the table shell (row/cell), never by removing the
-  shell. The pane keeps its height across data loads.
-- Truncation belongs to an **inner wrapper**, never to the `<td>`/`<th>` itself. A `max-width`
-  on the cell prevents the stretched column from drawing its bottom border when optional
-  columns are hidden. Use `.name-cell-inner` / `.sub-remarks-main` patterns and add `title`
-  for the full value.
+- A pane whose height must stay stable while filters or rule sets change renders empty and
+  loading states inside the table shell (row/cell); it MUST NOT remove the shell. Pages whose
+  table is absent when there is no data (subscriptions) MAY show a page-level empty/loading
+  state instead.
+- In tables with configurable/optional columns, truncation belongs to an **inner wrapper**,
+  never to the `<td>`/`<th>` itself. A `max-width` on the cell prevents the stretched column
+  from drawing its bottom border when columns are hidden. Fixed-column tables that never hide
+  columns (routing rules) MAY cap the cell directly. Use `.name-cell-inner` /
+  `.sub-remarks-main` patterns and add `title` for the full value.
 - The current-node marker is absolutely positioned in the `.name-cell` trailing gutter. Every
   row reserves that gutter (`padding-inline-end`) so the name column does not shift when the
   current row changes.
@@ -176,11 +184,13 @@ Reordering is pointer-driven and reproducible; native HTML5 drag is not used.
   viewport edge at 10px per frame and re-evaluates the placeholder after each scroll.
 - The table freezes its header column widths (`table-layout: fixed`) for the duration of the
   drag so removing the dragged row cannot resize the remaining columns.
-- `Escape` and `pointercancel` MUST end the drag without issuing a write. List callers either
-  leave the live order uncommitted (form state) or reload the authoritative order (routing
-  cards); table callers leave the rendered order unchanged until drop.
-- The table drag helper MUST NOT report a drop when the resulting order is unchanged. List
-  callers SHOULD skip the write when the final order matches the starting order.
+- `Escape` and `pointercancel` MUST end the drag without issuing a write. The list helper
+  receives the pre-drag order on cancel because it live-reorders caller state; callers restore
+  local form state from it (routing cards reload, group members restore their local order).
+  The table helper never mutates the caller's order while dragging, so cancel only cleans up.
+- Neither drag helper may report a drop when the resulting order matches the pre-drag order.
+  The list helper compares against `originalIds`; the table helper compares the prospective
+  order against the visible order before calling `onDrop`.
 - The shared row context menu MUST NOT duplicate drag commands (`move-top`, `move-up`,
   `move-down`, `move-bottom`, `position`). Dragging is the single reorder affordance.
 - Reduced motion disables the FLIP and ghost/placeholder entrance animations; the final order
@@ -228,9 +238,12 @@ Transient feedback MUST NOT participate in layout.
   fixed bottom-right on desktop and sit above the mobile navigation with safe-area offsets.
   They are queued, deduplicated and bounded; regular notices are evicted before a persistent
   operation status.
-- Long-running operations use `showPersistentNotice(...)` and dismiss it when the operation
-  ends. The status MUST survive bursts of regular notices. Do not add an inline "testing"
-  row, a stop button next to it, or a second progress surface for the same operation.
+- A pure indeterminate operation status uses `showPersistentNotice(...)` and dismisses it when
+  the operation ends. The status MUST survive bursts of regular notices. Do not add an inline
+  "testing" row or a stop button next to it.
+- Structured progress (per-row, phase or percentage) MAY render inline next to the affected
+  item because it carries information a toast cannot. Do not duplicate the same operation as a
+  generic global status line and a per-item progress surface; choose one.
 - A component MUST NOT render a transient error/notice block between a toolbar and content,
   inside a page header, or as an extra row that appears and disappears.
 - Field validation MAY set `aria-invalid` and disable submit, but the explanatory message MUST
@@ -385,8 +398,9 @@ value requires a comment explaining the content that stops fitting and a regress
   custom outline that lacks contrast.
 - Icon-only controls carry localized labels; tables keep header semantics; select-all exposes
   the selected count in its accessible name.
-- Scrollable regions that are keyboard-reachable MUST have `tabindex="0"` and a label, and MUST
-  show the focus ring on the region.
+- Scrollable regions that are direct tab stops MUST have `tabindex="0"` and a localized label,
+  and MUST show the focus ring. A region whose content is already reached through focusable
+  children MAY rely on those children instead.
 - Sticky headers and pinned action columns MUST NOT cover focused cells or row actions.
 - Drag handles are buttons with localized labels; the drag session never traps focus, and the
   ghost is `aria-hidden`.
@@ -443,10 +457,10 @@ Acceptance checklist:
 | `max-height` on a pane that switches data | The page jumps when the dataset shrinks |
 | Fixed pixel cap on a viewport-fitted table height | Leaves dead space or hides rows instead of tracking the viewport |
 | Equal-height columns achieved with fixed heights | Breaks at different viewports and with wrapping copy |
-| `max-width` on a table cell for truncation | The stretched column loses its bottom border when columns are hidden |
 | "Selected N" text, count pills, clear-selection buttons | Duplicates the badge and shifts layout |
 | Inline transient error/success blocks in toolbars or page flow | Pushes content and competes with the toast channel |
-| Inline long-running operation status with a stop button | Duplicates the persistent toast and changes page height |
+| Inline indeterminate operation status with a stop button | Duplicates the persistent toast and changes page height |
+| `max-width` on a cell in a table with optional columns | The stretched column loses its bottom border when columns are hidden |
 | Page menu entries duplicating row actions | Two sources of truth for the same command |
 | `draggable="true"` / native HTML5 drag | Inconsistent ghosting, no FLIP/placeholder, no Escape contract |
 | Context-menu move commands next to drag handles | Two competing reorder affordances |

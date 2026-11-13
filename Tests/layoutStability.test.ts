@@ -123,3 +123,30 @@ test('view controls precede the search and primary actions', async () => {
   const subAdd = subscriptions.indexOf("t('subscriptions.addSubscription')")
   assert.ok(subColumns >= 0 && proxy > subColumns && subAdd > proxy)
 })
+
+test('scrollable table shells are keyboard reachable and labelled', async () => {
+  const [nodes, logs, subscriptions, routing] = await Promise.all([
+    read('Features/Nodes/NodesTable.vue'),
+    read('Features/Logs/LogsList.vue'),
+    read('Pages/SubscriptionsPage.vue'),
+    read('Features/Routing/RoutingRulesPanel.vue'),
+  ])
+  assert.ok(nodes.includes('class="table-shell nodes-table-shell" tabindex="0" :aria-label="t(\'nodes.title\')"'))
+  assert.ok(logs.includes('class="log-table-desktop desktop-only" tabindex="0" :aria-label="t(\'logs.title\')"'))
+  assert.ok(logs.includes('class="mobile-only log-mobile" tabindex="0" :aria-label="t(\'logs.title\')"'))
+  assert.ok(subscriptions.includes('subscriptions-table-shell sticky-actions" tabindex="0" :aria-label="t(\'subscriptions.title\')"'))
+  assert.ok(routing.includes('rules-table-shell sticky-actions" tabindex="0" :aria-label="t(\'routing.rules\')"'))
+})
+
+test('subscription progress stays on the affected row instead of a global status line', async () => {
+  const page = await read('Pages/SubscriptionsPage.vue')
+  assert.doesNotMatch(page, /class="operation-status"/)
+  assert.match(page, /class="subscription-progress"/)
+})
+
+test('unsaved template state stays in the editor save bar, not a page header row', async () => {
+  const page = await read('Pages/TemplatesPage.vue')
+  assert.doesNotMatch(page, /class="page-head page-head-actions-only"/)
+  assert.doesNotMatch(page, /class="badge badge-primary"/)
+  assert.match(page, /<TemplateEditor/)
+})
