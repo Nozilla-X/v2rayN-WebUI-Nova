@@ -55,8 +55,8 @@ controls and scrollbars.
   tonal, outlined, text, danger and success variants share state-layer and ripple rules.
 - **Fields** use native inputs/selects/textareas with `.field` labels, hints and errors.
   Mobile inputs stay at 16px to avoid browser zoom.
-- **Checkboxes** remain native checkboxes (including indeterminate state) rather than
-  simulated switches.
+- **Checkboxes** use the Material `md-checkbox` wrapper while preserving checkbox semantics,
+  focus behavior and the indeterminate state; they are not simulated switches.
 - **Tables** use semantic table markup; selected rows win over hover, current rows use the
   tertiary container role, and numeric columns align consistently.
 - **Dialogs** (`AppDialog`) provide teleported scrims, focus trapping, return focus, nested

@@ -10,11 +10,10 @@ import { useDraftState } from '../UI/useDraftState'
 const { t } = useI18n()
 const app = useNovaApp()
 const state = app.templates.templatesPageState
-const actions = app.templates.templatesPageActions
 const activeCore = ref('')
 
 const coreKey = (value: unknown) => String(value ?? '').toLowerCase().replaceAll('_', '-')
-const { dirty, dirtyKeys, status } = useDraftState(
+const { dirtyKeys, status } = useDraftState(
   'templates',
   () => Object.fromEntries(state.templates.map((template: Record<string, any>) => [coreKey(template.coreType), template])),
   () => state.templates,
@@ -38,12 +37,6 @@ function label(template: Record<string, any>) {
 
 <template>
   <section class="page templates-page">
-    <header v-if="dirty" class="page-head page-head-actions-only">
-      <div class="page-actions">
-        <span class="badge badge-primary">{{ t('polish.unsaved') }}</span>
-      </div>
-    </header>
-
     <PageFeedback scope="templates" />
 
     <nav v-if="state.templates.length" class="tabs template-tabs" :aria-label="t('templates.title')">
