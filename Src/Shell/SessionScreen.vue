@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UiButton from '../Components/Material/UiButton.vue'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BackendAddressFields from '../Components/Material/BackendAddressFields.vue'
 import UiIcon from '../Components/Material/UiIcon.vue'
@@ -18,6 +18,10 @@ const setupConfirmKeyField = ref<InstanceType<typeof UiTextField> | null>(null)
 const loginSubmitting = ref(false)
 const setupSubmitPending = ref(false)
 let compositionEndedAt = 0
+
+watch(() => session.setupError.value, (message) => {
+  if (message) app.feedback.showNotice(message, 'error')
+})
 
 // Sync before native validation, which can otherwise overwrite a silently
 // autofilled Material shadow input. The same sync runs again on submit.
@@ -146,7 +150,6 @@ function onCompositionEnd() {
           required
           @keydown.enter="submitOnEnter($event, syncSetupKeys, submitSetup)"
         />
-        <p v-if="session.setupError.value" class="field-error" role="alert">{{ session.setupError.value }}</p>
       </div>
       <div class="session-actions">
         <UiButton

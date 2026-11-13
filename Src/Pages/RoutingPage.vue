@@ -22,22 +22,11 @@ const { dirty, status, allowDiscard } = useDraftState(
 )
 
 const pageMenu = computed<ActionMenuItem[]>(() => [
-  { id: 'activate', label: t('routing.setDefault'), icon: 'check', disabled: !state.selectedRoutingId },
   { id: 'import-profiles', label: t('routing.importProfiles'), icon: 'import' },
-  { id: 'sep-delete', separator: true },
-  {
-    id: 'delete-selected',
-    label: t('common.deleteSelected', { count: state.selectedRouteIds.length }),
-    icon: 'delete',
-    danger: true,
-    disabled: !state.selectedRouteIds.length || Boolean(state.deletingSelectedRoutes),
-  },
 ])
 
 function choosePageAction(id: string) {
-  if (id === 'activate') void actions.activateRoute(state.selectedRoutingId)
-  else if (id === 'import-profiles') void actions.importRoutingProfiles()
-  else if (id === 'delete-selected') void actions.deleteSelectedRoutes()
+  if (id === 'import-profiles') void actions.importRoutingProfiles()
 }
 
 </script>
@@ -122,7 +111,7 @@ function choosePageAction(id: string) {
   display: grid;
   min-width: 0;
   grid-template-columns: minmax(270px, 0.8fr) minmax(0, 2fr);
-  align-items: start;
+  align-items: stretch;
   gap: var(--nova-space-4);
 }
 

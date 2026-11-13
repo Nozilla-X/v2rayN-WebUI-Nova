@@ -227,7 +227,6 @@
     "no": "No",
     "any": "Any",
     "selectAll": "Select all",
-    "clearSelection": "Clear selection",
     "deleteSelected": "Delete selected ({count})",
     "more": "More",
     "chooseFromList": "Choose from list",

@@ -44,6 +44,10 @@ const shadowsocksMethods = computed(() => shadowsocksSecurityOptions(
 ))
 const title = computed(() => t(state.editingProfileId ? 'nodes.editNode' : 'nodes.addNode'))
 
+watch(() => state.profileModalError, (message) => {
+  if (message) app.feedback.showNotice(message, 'error')
+})
+
 watch(
   () => [state.showProfileForm, protocol.value] as const,
   ([isOpen, configType], previous) => {
@@ -132,8 +136,6 @@ function close() {
           <textarea v-model="state.profileAdvancedJson" class="code-area advanced-profile-json" spellcheck="false" />
         </div>
       </details>
-
-      <p v-if="state.profileModalError" class="inline-error" role="alert">{{ state.profileModalError }}</p>
     </form>
 
     <template #actions>
@@ -190,11 +192,5 @@ function close() {
   width: 100%;
   min-height: 220px;
   resize: vertical;
-}
-
-.inline-error {
-  margin: 0;
-  color: var(--md-sys-color-error);
-  font-size: var(--md-sys-typescale-body-medium-size);
 }
 </style>

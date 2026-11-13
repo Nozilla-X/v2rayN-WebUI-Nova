@@ -204,7 +204,6 @@ function chooseRow(rule: Record<string, any>, id: string) {
       <ActionMenu :items="importItems" :label="t('routing.importMenu')" :button-text="t('routing.importMenu')" button-icon="import" button-class="btn btn-tonal" @select="chooseImport" />
       <ActionMenu :items="batchItems" :label="t('routing.batchActions')" :button-text="t('routing.batchActions')" button-icon="sort" button-class="btn btn-outlined" @select="chooseBatch" />
       <input ref="fileInput" hidden type="file" accept=".json,application/json,text/plain" @change="actions.readRulesFile" />
-      <span v-if="state.selectedRuleIds.length" class="selection-count">{{ t('common.selected', { count: state.selectedRuleIds.length }) }}</span>
     </div>
 
     <p class="field-hint">{{ t('routing.importParserHint') }}</p>
@@ -214,7 +213,14 @@ function chooseRow(rule: Record<string, any>, id: string) {
         <thead>
           <tr>
             <th class="cell-check">
-              <UiCheckbox :model-value="allSelected" :indeterminate="selectionIndeterminate" :aria-label="t('common.selectAll')" @change="actions.toggleAllRules" />
+              <span class="selection-check">
+                <UiCheckbox :model-value="allSelected" :indeterminate="selectionIndeterminate" :aria-label="t('common.selectAll')" @change="actions.toggleAllRules" />
+                <span
+                  v-if="state.selectedRuleIds.length"
+                  class="selection-count"
+                  :aria-label="t('common.selected', { count: state.selectedRuleIds.length })"
+                >{{ state.selectedRuleIds.length }}</span>
+              </span>
             </th>
             <th class="cell-drag"><span class="visually-hidden">{{ t('nodes.dragToSort') }}</span></th>
             <th>{{ t('routing.remarks') }}</th>
@@ -418,13 +424,6 @@ function chooseRow(rule: Record<string, any>, id: string) {
   font-size: var(--md-sys-typescale-body-medium-size);
 }
 
-.selection-count {
-  margin-left: auto;
-  color: var(--md-sys-color-on-surface-variant);
-  font-size: var(--md-sys-typescale-label-medium-size);
-  white-space: nowrap;
-}
-
 .rules-table-shell {
   /* Keep the workspace height stable while switching rule sets; otherwise a
      shorter list clamps the page scroll and makes the whole view jump. */
@@ -602,11 +601,6 @@ function chooseRow(rule: Record<string, any>, id: string) {
 
   .rules-toolbar > .btn {
     flex: 1 1 min(100%, 150px);
-  }
-
-  .selection-count {
-    width: 100%;
-    margin-left: 0;
   }
 
   .rule-card {

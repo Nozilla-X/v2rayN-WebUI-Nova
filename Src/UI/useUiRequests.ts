@@ -5,6 +5,7 @@ export interface UiRequestState {
   reads: number
   writes: number
   error: string
+  errorFromWrite: boolean
   started: { id: number; path: string } | null
   committed: { id: number; path: string } | null
 }
@@ -19,7 +20,7 @@ export function requestScope(path: string): string {
   if (path.startsWith('/api/logs')) return 'logs'
   return ''
 }
-function emptyState(): UiRequestState { return { reads: 0, writes: 0, error: '', started: null, committed: null } }
+function emptyState(): UiRequestState { return { reads: 0, writes: 0, error: '', errorFromWrite: false, started: null, committed: null } }
 const key: InjectionKey<UiRequests> = Symbol('ui-requests')
 export type UiRequests = ReturnType<typeof useUiRequests>
 
@@ -46,6 +47,7 @@ export function useUiRequests(confirm: (message: string) => Promise<boolean>) {
         const counter = write ? 'writes' : 'reads'
         status[counter]++
         status.error = ''
+        status.errorFromWrite = false
         if (write) status.started = { id, path }
         try {
           const result = await operation(path, ...args)
@@ -54,6 +56,7 @@ export function useUiRequests(confirm: (message: string) => Promise<boolean>) {
         } catch (error) {
           if (revision === generation && (error as Error)?.name !== 'AbortError') {
             status.error = (error as Error)?.message || ''
+            status.errorFromWrite = write
             if (error && typeof error === 'object') failures.add(error)
           }
           throw error
@@ -83,7 +86,7 @@ export function usePageRequests(scope: string) {
     catch (error) {
       if ((error as Error)?.name === 'AbortError') return
       if (!status.error || !requests?.isRequestError(error)) throw error
-    } // Only consume request failures already visible inline; never hide programming errors.
+    } // Only consume request failures already announced through PageFeedback; never hide programming errors.
   }
   return { requests, status, run }
 }

@@ -88,6 +88,9 @@ Rules:
 
 ## Responsive contract
 
+Page geometry, scroll ownership, pane sizing and the placement of transient feedback are
+normative in [`layout-spec.md`](layout-spec.md). This section defines the visual breakpoints.
+
 | Boundary | Behavior |
 | --- | --- |
 | `>1100px` | Full desktop rail with labels and utility text |

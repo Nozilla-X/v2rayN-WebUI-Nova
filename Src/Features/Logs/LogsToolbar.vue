@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UiButton from '../../Components/Material/UiButton.vue'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ActionMenu, { type ActionMenuItem } from '../../Components/Material/ActionMenu.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
@@ -41,6 +41,10 @@ const invalidRegex = computed(() => {
   catch { return true }
 })
 
+watch(invalidRegex, (invalid) => {
+  if (invalid) app.feedback.showNotice(t('polish.invalidRegex'), 'error')
+})
+
 const levelItems = computed<ActionMenuItem[]>(() => levelOptions.map((option) => ({
   id: option.value,
   label: t(option.label),
@@ -56,7 +60,10 @@ const actionItems = computed<ActionMenuItem[]>(() => [
 ])
 
 function load() {
-  if (invalidRegex.value) return
+  if (invalidRegex.value) {
+    app.feedback.showNotice(t('polish.invalidRegex'), 'error')
+    return
+  }
   return run(() => actions.loadLogs(1))
 }
 
@@ -109,7 +116,6 @@ function logAction(id: string) {
           @keyup.enter="load"
         />
       </div>
-      <p v-if="invalidRegex" class="field-error" role="alert">{{ t('polish.invalidRegex') }}</p>
     </search>
 
     <div class="log-actions">

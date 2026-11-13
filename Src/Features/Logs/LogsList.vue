@@ -42,25 +42,25 @@ function message(log: Dict) {
 </script>
 
 <template>
-  <div v-if="selectedCount" class="selection-summary" role="status">
-    <span class="badge badge-primary">{{ t('common.selected', { count: selectedCount }) }}</span>
-    <UiButton type="button" class="btn btn-text btn-small" @click="state.selectedLogKeys = []">
-      {{ t('common.clearSelection') }}
-    </UiButton>
-  </div>
-
   <div class="table-shell log-table-shell" :aria-busy="Boolean(status.reads)">
     <div class="log-table-desktop desktop-only" @scroll.passive="emit('scroll')">
       <table class="data-table log-table">
         <thead>
           <tr>
             <th class="cell-check">
-              <UiCheckbox
-                :model-value="allSelected"
-                :indeterminate="partiallySelected"
-                :aria-label="t('common.selectAll')"
-                @change="actions.toggleAllLogs"
-              />
+              <span class="selection-check">
+                <UiCheckbox
+                  :model-value="allSelected"
+                  :indeterminate="partiallySelected"
+                  :aria-label="t('common.selectAll')"
+                  @change="actions.toggleAllLogs"
+                />
+                <span
+                  v-if="selectedCount"
+                  class="selection-count"
+                  :aria-label="t('common.selected', { count: selectedCount })"
+                >{{ selectedCount }}</span>
+              </span>
             </th>
             <th class="time-column">{{ t('logs.time') }}</th>
             <th class="source-column">{{ t('logs.source') }}</th>
@@ -94,12 +94,19 @@ function message(log: Dict) {
     <div class="mobile-only log-mobile" @scroll.passive="emit('scroll')">
       <div class="mobile-select-all">
         <label class="check">
-          <UiCheckbox
-            :model-value="allSelected"
-            :indeterminate="partiallySelected"
-            :aria-label="t('common.selectAll')"
-            @change="actions.toggleAllLogs"
-          />
+          <span class="selection-check">
+            <UiCheckbox
+              :model-value="allSelected"
+              :indeterminate="partiallySelected"
+              :aria-label="t('common.selectAll')"
+              @change="actions.toggleAllLogs"
+            />
+            <span
+              v-if="selectedCount"
+              class="selection-count"
+              :aria-label="t('common.selected', { count: selectedCount })"
+            >{{ selectedCount }}</span>
+          </span>
           <span>{{ t('common.selectAll') }}</span>
         </label>
       </div>
@@ -148,13 +155,6 @@ function message(log: Dict) {
 </template>
 
 <style scoped>
-.selection-summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--nova-space-2);
-}
-
 .log-table-shell {
   min-width: 0;
   max-height: min(62dvh, 680px);

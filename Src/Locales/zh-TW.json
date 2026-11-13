@@ -227,7 +227,6 @@
     "no": "否",
     "any": "不限",
     "selectAll": "全選",
-    "clearSelection": "清除選取",
     "deleteSelected": "刪除所選（{count}）",
     "more": "更多",
     "chooseFromList": "從清單選擇",
