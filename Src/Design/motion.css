@@ -71,7 +71,6 @@
 }
 
 /* Progress and loading cues share one breathing rhythm. */
-.page-feedback .spinner,
 .operation-status .spinner {
   animation-duration: 760ms;
 }
@@ -132,7 +131,6 @@
 
   /* Loading indicators keep communicating progress, just at a calmer pace. */
   .spinner,
-  .page-feedback .spinner,
   .operation-status .spinner {
     animation-duration: 2400ms;
   }

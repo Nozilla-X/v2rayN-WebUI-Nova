@@ -15,7 +15,7 @@ import type { Browser, Page } from 'playwright'
 import { screenshotApiHandler, screenshotFixtures } from '../Tests/browser/screenshotFixtures.ts'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const outputRoot = path.join(root, 'docs/screenshots')
+const outputRoot = path.join(root, 'Doc/screenshots')
 const fixture = screenshotFixtures()
 
 const VIEWPORTS = {

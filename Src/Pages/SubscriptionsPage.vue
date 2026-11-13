@@ -157,10 +157,6 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
     </header>
 
     <PageFeedback scope="subscriptions" />
-    <p v-if="activeOperations.length" class="operation-status" role="status">
-      <span class="status-dot is-on" />{{ t('polish.updating') }}
-      <span class="muted">{{ t('polish.progressHint') }}</span>
-    </p>
 
     <div v-if="!rows.length && status.reads" class="loading-state" role="status">
       <span class="spinner" />{{ t('common.loading') }}
@@ -172,7 +168,7 @@ function toggleUseProxy() { state.subscriptionUseProxy = !state.subscriptionUseP
       </UiButton>
     </div>
 
-    <div v-else ref="tableShell" v-scroll-shadow class="desktop-only table-shell subscriptions-table-shell sticky-actions" tabindex="0">
+    <div v-else ref="tableShell" v-scroll-shadow class="desktop-only table-shell subscriptions-table-shell sticky-actions" tabindex="0" :aria-label="t('subscriptions.title')">
       <table class="data-table subscription-table" :style="{ minWidth: `${subscriptionMinWidth}px` }">
         <caption class="visually-hidden">{{ t('subscriptions.title') }}</caption>
         <thead>

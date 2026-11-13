@@ -30,7 +30,6 @@ function toggleRoute(id: string) {
 
 function routeMenu(route: Record<string, any>): ActionMenuItem[] {
   return [
-    { id: 'select', label: t('routing.profiles'), icon: 'check' },
     { id: 'activate', label: t('routing.setDefault'), icon: 'pin', disabled: route.id === state.activeRoutingId },
     { id: 'edit', label: t('common.edit'), icon: 'edit' },
     { id: 'delete', label: t('common.delete'), icon: 'delete', danger: true },
@@ -38,8 +37,7 @@ function routeMenu(route: Record<string, any>): ActionMenuItem[] {
 }
 
 function chooseRoute(route: Record<string, any>, id: string) {
-  if (id === 'select') void selectRoute(route.id)
-  else if (id === 'activate') void actions.activateRoute(route.id)
+  if (id === 'activate') void actions.activateRoute(route.id)
   else if (id === 'edit') actions.openEditRoute(route)
   else if (id === 'delete') void actions.deleteRoute(route)
 }
@@ -50,16 +48,22 @@ function chooseRoute(route: Record<string, any>, id: string) {
     <header class="card-head routes-head">
       <div class="heading-copy">
         <div class="title-line">
-          <UiCheckbox
-            :model-value="allSelected"
-            :indeterminate="selectionIndeterminate"
-            :aria-label="t('common.selectAll')"
-            @change="actions.toggleAllRoutes"
-          />
+          <span class="selection-check">
+            <UiCheckbox
+              :model-value="allSelected"
+              :indeterminate="selectionIndeterminate"
+              :aria-label="t('common.selectAll')"
+              @change="actions.toggleAllRoutes"
+            />
+            <span
+              v-if="state.selectedRouteIds.length"
+              class="selection-count"
+              :aria-label="t('common.selected', { count: state.selectedRouteIds.length })"
+            >{{ state.selectedRouteIds.length }}</span>
+          </span>
           <h2 id="routing-profiles-heading">{{ t('routing.profiles') }}</h2>
           <span class="count-pill">{{ state.routes.length }}</span>
         </div>
-        <small v-if="state.selectedRouteIds.length">{{ t('common.selected', { count: state.selectedRouteIds.length }) }}</small>
       </div>
     </header>
 
@@ -122,9 +126,9 @@ function chooseRoute(route: Record<string, any>, id: string) {
 
 <style scoped>
 .routing-panel {
-  display: grid;
+  display: flex;
   min-width: 0;
-  align-content: start;
+  flex-direction: column;
   gap: var(--nova-space-3);
 }
 
@@ -162,6 +166,16 @@ function chooseRoute(route: Record<string, any>, id: string) {
   align-content: start;
   gap: var(--nova-space-1);
   overflow-y: auto;
+}
+
+/* In the two-column layout the card stretches to the rules pane; let the list
+   consume that space and keep the regional presets pinned to the card bottom. */
+@media (min-width: 1101px) {
+  .route-list {
+    min-height: 0;
+    flex: 1 1 auto;
+    max-height: none;
+  }
 }
 
 .route-item {

@@ -6,6 +6,7 @@ import UiIcon from '../../Components/Material/UiIcon.vue'
 import FormField from './FormField.vue'
 import { codeEditor as vCodeEditor } from '../../UI/codeEditor'
 import { vDetailsMotion } from '../../UI/detailsMotion'
+import { useNovaApp } from '../../App/context'
 
 const props = defineProps<{
   form: Record<string, any>
@@ -18,13 +19,14 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ 'update:raw': [value: string]; save: [] }>()
 const { t } = useI18n()
-const jsonError = ref('')
+const app = useNovaApp()
+const jsonInvalid = ref(false)
 const locked = computed(() => props.disabled || props.busy)
 const list = (key: string): string[] => Array.isArray(props.options[key]) ? props.options[key] : []
 const strategies = () => list('domainStrategies4Freedom')
 
 function updateRaw(event: Event) {
-  jsonError.value = ''
+  jsonInvalid.value = false
   emit('update:raw', (event.target as HTMLTextAreaElement).value)
 }
 
@@ -32,10 +34,11 @@ function validJson(): boolean {
   try {
     const parsed = JSON.parse(props.raw || '{}')
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('shape')
-    jsonError.value = ''
+    jsonInvalid.value = false
     return true
   } catch {
-    jsonError.value = t('common.invalidJson')
+    jsonInvalid.value = true
+    app.feedback.showNotice(t('common.invalidJson'), 'error')
     return false
   }
 }
@@ -50,7 +53,6 @@ function saveSimple() {
     <p v-if="disabled" class="banner banner-warning" role="status">
       <UiIcon name="warning" /> {{ t('dns.customDnsConflict') }}
     </p>
-    <p v-if="jsonError" class="field-error" role="alert">{{ jsonError }}</p>
 
     <article v-if="section === 'simple'" class="card dns-card">
       <div class="section-title">
@@ -110,7 +112,7 @@ function saveSimple() {
             :value="raw"
             :disabled="locked"
             :aria-label="t('dns.jsonEditor')"
-            :aria-invalid="Boolean(jsonError)"
+            :aria-invalid="Boolean(jsonInvalid)"
             spellcheck="false"
             @input="updateRaw"
           ></textarea>
@@ -121,7 +123,7 @@ function saveSimple() {
         <span class="draft-status" :class="{ 'is-dirty': dirty }" role="status">
           {{ t(busy ? 'polish.saving' : dirty ? 'polish.unsaved' : 'polish.saved') }}
         </span>
-        <UiButton type="button" class="btn btn-filled" :disabled="disabled || busy || Boolean(jsonError)" :aria-busy="busy" @click="saveSimple" icon="save">{{ t('dns.saveSimple') }}
+        <UiButton type="button" class="btn btn-filled" :disabled="disabled || busy || Boolean(jsonInvalid)" :aria-busy="busy" @click="saveSimple" icon="save">{{ t('dns.saveSimple') }}
         </UiButton>
       </div>
     </article>

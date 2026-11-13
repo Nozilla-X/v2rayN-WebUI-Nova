@@ -1,15 +1,5 @@
 /* Status, banners, empty/loading states, forms footers and code surfaces. */
 
-.page-feedback {
-  display: flex;
-  min-height: 24px;
-  align-items: center;
-  gap: var(--nova-space-2);
-  color: var(--md-sys-color-on-surface-variant);
-  font-size: var(--md-sys-typescale-body-small-size);
-  overflow-wrap: anywhere;
-}
-
 .operation-status {
   display: flex;
   min-height: 32px;

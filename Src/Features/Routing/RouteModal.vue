@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UiButton from '../../Components/Material/UiButton.vue'
-import { computed, ref, useId } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppDialog from '../../Components/Material/AppDialog.vue'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
@@ -43,6 +43,10 @@ const ruleSetStatus = computed<'empty' | 'ok' | 'invalid'>(() => {
   }
 })
 
+watch(ruleSetStatus, (value) => {
+  if (value === 'invalid') app.feedback.showNotice(t('routing.rulesInvalid'), 'error')
+})
+
 function close() {
   state.showRouteForm = false
 }
@@ -56,6 +60,7 @@ async function submit() {
   remarksError.value = ''
   if (!String(state.routeForm.remarks ?? '').trim()) {
     remarksError.value = t('routing.nameRequired')
+    app.feedback.showNotice(remarksError.value, 'error')
     return
   }
   if (ruleSetStatus.value === 'invalid') return
@@ -82,7 +87,6 @@ import UiSelect from '../../Components/Material/UiSelect.vue'
           <label class="field field-wide">
             <span class="field-label">{{ t('routing.name') }}</span>
             <input v-model="state.routeForm.remarks" :aria-invalid="remarksError ? 'true' : undefined" @input="remarksError = ''" />
-            <p v-if="remarksError" class="field-error" role="alert">{{ remarksError }}</p>
           </label>
           <label class="field">
             <span class="field-label">{{ t('routing.url') }}</span>
@@ -158,10 +162,6 @@ import UiSelect from '../../Components/Material/UiSelect.vue'
           </div>
         </div>
       </details>
-
-      <p v-if="ruleSetStatus === 'invalid'" class="banner banner-error" role="alert">
-        {{ t('routing.rulesInvalid') }}
-      </p>
     </form>
 
     <template #actions>
