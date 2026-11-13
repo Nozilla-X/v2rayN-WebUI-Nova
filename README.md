@@ -10,8 +10,8 @@ UI to start. Nova pairs with a `v2rayN.WebAPI` build that exposes the required c
 `settings`, `backup.restore`, `core.runtime`, `core.updates`, `WebAPI.self-update`).
 
 <p align="center">
-  <img src="docs/screenshots/en-US/desktop/nodes.png" width="70%" alt="Nova desktop node list">
-  <img src="docs/screenshots/en-US/mobile/nodes-viewport.png" width="22%" alt="Nova mobile node list">
+  <img src="Doc/screenshots/en-US/desktop/nodes.png" width="70%" alt="Nova desktop node list">
+  <img src="Doc/screenshots/en-US/mobile/nodes-viewport.png" width="22%" alt="Nova mobile node list">
 </p>
 
 ## Highlights
@@ -95,7 +95,7 @@ window.__V2RAYN_WEBUI_CONFIG__ = { apiBaseUrl: 'http://127.0.0.1:5080' }
 A saved user selection overrides this default. When the UI is hosted independently, the backend
 must allow the exact WebUI origin (scheme, host and port) through
 `V2RAYN_WEB_ALLOWED_ORIGINS`; first-run setup remains loopback-only. See
-[`docs/api.md`](docs/api.md) for the authentication, session, CORS and setup rules.
+[`Doc/api.md`](Doc/api.md) for the authentication, session, CORS and setup rules.
 
 ## Deployment
 
@@ -189,17 +189,18 @@ is no separate build step for tooling.
 
 Browser tests under `Tests/browser/` are optional and require Playwright. They run against
 isolated fixtures or a fixture API, use deterministic data and never connect to a production
-backend. The screenshot harness writes locale/size variants under `docs/screenshots/`.
+backend. The screenshot harness writes locale/size variants under `Doc/screenshots/`.
 
 ## Documentation
 
 | Document | Contents |
 | --- | --- |
-| [`docs/api.md`](docs/api.md) | Complete API contract: auth/setup, endpoints, models, enums, SSE, error codes, security |
-| [`docs/design-system.md`](docs/design-system.md) | Tokens, Material primitives, glass, responsive contract, motion, accessibility |
-| [`docs/frontend-modules.md`](docs/frontend-modules.md) | Module map and state ownership |
-| [`docs/keyboard-shortcuts.md`](docs/keyboard-shortcuts.md) | Keyboard navigation reference |
-| [`docs/mobile-layout-validation.md`](docs/mobile-layout-validation.md) | Mobile layout invariants and validation notes |
+| [`Doc/api.md`](Doc/api.md) | Complete API contract: auth/setup, endpoints, models, enums, SSE, error codes, security |
+| [`Doc/design-system.md`](Doc/design-system.md) | Tokens, Material primitives, glass, responsive contract, motion, accessibility |
+| [`Doc/layout-spec.md`](Doc/layout-spec.md) | Normative layout contract: scroll model, pane sizing, tables, feedback and selection |
+| [`Doc/frontend-modules.md`](Doc/frontend-modules.md) | Module map and state ownership |
+| [`Doc/keyboard-shortcuts.md`](Doc/keyboard-shortcuts.md) | Keyboard navigation reference |
+| [`Doc/mobile-layout-validation.md`](Doc/mobile-layout-validation.md) | Mobile layout invariants and validation notes |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release history |
 
 ## Security model

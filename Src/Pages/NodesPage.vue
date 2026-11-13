@@ -7,7 +7,6 @@ import NodesMobileList from '../Features/Nodes/NodesMobileList.vue'
 import PageFeedback from '../Components/Material/PageFeedback.vue'
 import ActionMenu, { type ActionMenuItem } from '../Components/Material/ActionMenu.vue'
 import ColumnSettingsDialog from '../Components/Material/ColumnSettingsDialog.vue'
-import UiIcon from '../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../App/context'
 import { useMediaQuery } from '../UI/useMediaQuery'
 import { createColumnVisibility } from '../UI/columnPreferences'
@@ -120,18 +119,8 @@ function bulkAction(id: string) {
     </div>
 
     <div v-if="isMobile && selected" class="mobile-bulk-bar">
-      <span class="bulk-count">{{ t('common.selected', { count: selected }) }}</span>
       <div class="row">
         <ActionMenu :items="bulkItems" :label="t('nodes.actions')" @select="bulkAction" />
-        <button
-          type="button"
-          class="icon-btn"
-          :aria-label="t('common.clearSelection')"
-          :title="t('common.clearSelection')"
-          @click="state.selectedIds = []"
-        >
-          <UiIcon name="close" />
-        </button>
       </div>
     </div>
 

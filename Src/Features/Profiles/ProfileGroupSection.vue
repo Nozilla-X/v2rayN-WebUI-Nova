@@ -22,6 +22,7 @@ const memberDrag = useListDragSort({
   itemSelector: '.group-member-row',
   getIds: () => [...state.groupChildIds],
   onReorder: (ids) => actions.reorderGroupChild(ids),
+  onCancel: (ids) => actions.reorderGroupChild(ids),
 })
 const draggingMemberId = memberDrag.draggingId
 const beginMemberDrag = memberDrag.begin

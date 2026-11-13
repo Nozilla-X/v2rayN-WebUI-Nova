@@ -16,7 +16,6 @@ const state = app.routing.routingPageState
 const actions = app.routing.routingPageActions
 const { status, run } = usePageRequests('routing')
 const fileInput = ref<HTMLInputElement | null>(null)
-const formatError = ref('')
 const hasUrl = computed(() => Boolean(state.selectedRoute?.url?.trim()))
 const importItems = computed<ActionMenuItem[]>(() => [
   { id: 'append', label: t('routing.append'), icon: 'check', checked: state.appendRules },
@@ -36,9 +35,8 @@ function chooseImport(id: string) {
 function formatRaw() {
   try {
     state.rulesRaw = JSON.stringify(JSON.parse(state.rulesRaw), null, 2)
-    formatError.value = ''
   } catch {
-    formatError.value = t('common.invalidJson')
+    app.feedback.showNotice(t('common.invalidJson'), 'error')
   }
 }
 
@@ -46,8 +44,7 @@ function pasteRaw() {
   void navigator.clipboard.readText().then((text) => {
     if (!text) return
     state.rulesRaw = text
-    formatError.value = ''
-  }).catch(() => { formatError.value = t('common.clipboardUnavailable') })
+  }).catch(() => app.feedback.showNotice(t('common.clipboardUnavailable'), 'error'))
 }
 
 function save() {
@@ -113,9 +110,7 @@ function save() {
         class="code-area rules-json"
         :aria-label="t('routing.advancedJson')"
         spellcheck="false"
-        @input="formatError = ''"
       ></textarea>
-      <p v-if="formatError" class="field-error" role="alert">{{ formatError }}</p>
       <div class="save-bar raw-save-bar">
         <UiButton type="button" class="btn btn-text" @click="formatRaw" icon="code">{{ t('common.format') }}</UiButton>
         <UiButton type="button" class="btn btn-text" @click="pasteRaw" icon="clipboard">{{ t('common.paste') }}</UiButton>

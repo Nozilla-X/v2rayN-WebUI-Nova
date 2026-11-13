@@ -1,15 +1,25 @@
 <script setup lang="ts">
+import { watch } from 'vue'
+import { useNovaApp } from '../../App/context'
 import { usePageRequests } from '../../UI/useUiRequests'
 
 const props = defineProps<{ scope: string }>()
 const { status } = usePageRequests(props.scope)
+const app = useNovaApp()
+
+// Request errors belong to the global toast channel. A banner rendered between
+// the toolbar and the content shifted the whole page whenever a request failed.
+// Write failures are already reported by the action that issued them, so only
+// read failures need this fallback.
+watch(
+  () => [status.error, status.errorFromWrite] as const,
+  ([message, fromWrite]) => {
+    if (message && !fromWrite) app.feedback.showNotice(message, 'error')
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
-  <!-- Read/write progress is already shown by each control and by page-local
-       loading states. Rendering it here as well inserted a banner between the
-       toolbar and the table on every background refresh, shifting the page. -->
-  <div v-if="status.error" class="page-feedback">
-    <span class="field-error" role="alert">{{ status.error }}</span>
-  </div>
+  <!-- Page-scope errors are announced through the global toast viewport. -->
 </template>

@@ -1,6 +1,7 @@
 # Mobile layout validation
 
-Nova treats mobile as a separate interaction model, not a compressed desktop table.
+Nova treats mobile as a separate interaction model, not a compressed desktop table. The
+normative geometry and scroll rules are in [`layout-spec.md`](layout-spec.md).
 
 ## Contract
 
@@ -16,7 +17,8 @@ Nova treats mobile as a separate interaction model, not a compressed desktop tab
 - **Content:** tables become mobile cards. Nodes expose selection, current state, protocol,
   latency/speed, traffic and the full per-node action menu. List rows wrap long names, endpoints
   and URLs instead of forcing horizontal scrolling.
-- **Selection:** a floating bulk bar sits above the tab bar with selection-aware commands.
+- **Selection:** a floating bulk bar sits above the tab bar with the batch action menu; the
+  selected count lives only on the select-all badge.
 - **Dialogs:** full-width, single-column forms with touch-sized controls; body scrolling is
   locked and focus is trapped.
 - **Safe areas:** bars and dialogs use `env(safe-area-inset-*)` through `--nova-safe-*`.

@@ -11,8 +11,8 @@ interface ListDragSortOptions {
   onReorder: (ids: string[]) => void
   /** Called once on release with the final order. */
   onDrop?: (ids: string[], draggedId: string) => void
-  /** Called when the drag is cancelled (Escape or pointercancel). */
-  onCancel?: () => void
+  /** Called when the drag is cancelled; receives the pre-drag order. */
+  onCancel?: (originalIds: string[]) => void
 }
 
 interface DragSession {
@@ -208,13 +208,16 @@ export function useListDragSort(options: ListDragSortOptions) {
 
   function finish(s: DragSession) {
     const ids = [...options.getIds()]
+    const unchanged = ids.length === s.originalIds.length
+      && ids.every((id, index) => id === s.originalIds[index])
     cleanup(s)
-    options.onDrop?.(ids, s.itemId)
+    if (!unchanged) options.onDrop?.(ids, s.itemId)
   }
 
   function cancel(s: DragSession) {
+    const originalIds = [...s.originalIds]
     cleanup(s)
-    options.onCancel?.()
+    options.onCancel?.(originalIds)
   }
 
   function cleanup(s: DragSession) {

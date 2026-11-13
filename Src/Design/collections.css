@@ -355,6 +355,35 @@ button.list-item:hover {
   text-align: center;
 }
 
+/* A select-all checkbox with its selected-count badge in the top corner. */
+.selection-check {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.selection-count {
+  position: absolute;
+  top: -6px;
+  inset-inline-end: -6px;
+  display: inline-flex;
+  min-width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 4px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--md-sys-typescale-weight-semibold);
+  line-height: 1;
+  pointer-events: none;
+}
+
 .data-table .cell-number {
   text-align: right;
   font-variant-numeric: tabular-nums;
