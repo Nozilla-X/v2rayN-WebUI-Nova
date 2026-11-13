@@ -5,8 +5,28 @@ const nullableTextFields = [
   'ports', 'flow', 'vlessEncryption', 'ssMethod', 'wgPublicKey', 'wgPresharedKey',
   'wgInterfaceAddress', 'wgReserved', 'wgDns', 'salamanderPass', 'hopInterval',
   'hy2RealmUrl', 'congestionControl', 'groupType', 'childItems', 'subChildItems',
-  'filter', 'multipleLoad',
+  'filter',
 ]
+
+/**
+ * ServiceLib stores MultipleLoad as the numeric EMultipleLoad value inside the
+ * protoExtra JSON string (`LeastPing = 0`, `Fallback = 1`, ...). The editor
+ * intentionally exposes the names returned by /api/editor-options, so convert
+ * at the form boundary instead of sending a name the backend cannot parse.
+ */
+export const multipleLoadNames = ['LeastPing', 'Fallback', 'Random', 'RoundRobin', 'LeastLoad'] as const
+
+export function multipleLoadName(value: unknown): string {
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < multipleLoadNames.length) {
+    return multipleLoadNames[value]
+  }
+  const text = String(value ?? '')
+  return (multipleLoadNames as readonly string[]).includes(text) ? text : multipleLoadNames[0]
+}
+
+export function multipleLoadEnum(value: unknown): number {
+  return multipleLoadNames.indexOf(multipleLoadName(value) as typeof multipleLoadNames[number])
+}
 
 const nullableTransportTextFields = [
   'rawHeaderType', 'host', 'path', 'xhttpMode', 'xhttpExtra', 'grpcAuthority',

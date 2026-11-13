@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
 import { useNovaApp } from '../../App/context'
+import { useListDragSort } from '../../UI/listDragSort'
 
 const { t } = useI18n()
 const app = useNovaApp()
@@ -11,9 +12,32 @@ const state = app.profiles.profileModalState
 const actions = app.profiles.profileModalActions
 const protocol = computed(() => String(state.profileForm.configType || ''))
 const strategies = computed(() => state.editorOptions.multipleLoadStrategies || [])
+const memberOrder = ref<HTMLElement | null>(null)
+// ServiceLib excludes Custom configs from group membership; keep an already
+// selected one visible so legacy groups can still be edited cleanly.
+const selectableProfiles = computed(() => state.profileCatalog.filter((item: Record<string, any>) =>
+  String(item.configType).toLowerCase() !== 'custom' || state.groupChildIds.includes(item.indexId)))
+const memberDrag = useListDragSort({
+  container: memberOrder,
+  itemSelector: '.group-member-row',
+  getIds: () => [...state.groupChildIds],
+  onReorder: (ids) => actions.reorderGroupChild(ids),
+})
+const draggingMemberId = memberDrag.draggingId
+const beginMemberDrag = memberDrag.begin
 
 function nameFor(profileId: string) {
   return state.profileCatalog.find((item: Record<string, any>) => item.indexId === profileId)?.remarks || profileId
+}
+
+function moveMember(id: string, offset: number) {
+  const order = [...state.groupChildIds]
+  const from = order.indexOf(id)
+  const to = from + offset
+  if (from < 0 || to < 0 || to >= order.length) return
+  order.splice(from, 1)
+  order.splice(to, 0, id)
+  actions.reorderGroupChild(order)
 }
 import UiSelect from '../../Components/Material/UiSelect.vue'
 </script>
@@ -39,7 +63,7 @@ import UiSelect from '../../Components/Material/UiSelect.vue'
         <small class="field-hint">{{ t('nodes.groupMembersHint') }}</small>
         <div class="group-member-columns">
           <div class="group-profile-choices">
-            <label v-for="item in state.profileCatalog" :key="item.indexId" class="group-profile-choice">
+            <label v-for="item in selectableProfiles" :key="item.indexId" class="group-profile-choice">
               <UiCheckbox
                 :model-value="state.groupChildIds.includes(item.indexId)"
                 :disabled="item.indexId === state.editingProfileId"
@@ -51,27 +75,26 @@ import UiSelect from '../../Components/Material/UiSelect.vue'
               </span>
             </label>
           </div>
-          <div class="group-member-order">
-            <div v-for="(id, index) in state.groupChildIds" :key="id" class="group-member-row">
+          <div ref="memberOrder" class="group-member-order">
+            <div
+              v-for="id in state.groupChildIds"
+              :key="id"
+              :data-list-drag-id="id"
+              class="group-member-row"
+              :class="{ 'is-drag-source': draggingMemberId === id }"
+            >
+              <button
+                type="button"
+                class="icon-btn member-drag-handle"
+                :aria-label="t('nodes.dragToSort')"
+                :title="t('nodes.dragToSort')"
+                @pointerdown="beginMemberDrag($event, id)"
+                @keydown.up.prevent="moveMember(id, -1)"
+                @keydown.down.prevent="moveMember(id, 1)"
+              >
+                <UiIcon name="drag-handle" />
+              </button>
               <span>{{ nameFor(id) }}</span>
-              <button
-                type="button"
-                class="icon-btn"
-                :disabled="index === 0"
-                :aria-label="t('nodes.moveMemberUp')"
-                @click="actions.moveGroupChild(id, 'up')"
-              >
-                <UiIcon name="arrow-up" />
-              </button>
-              <button
-                type="button"
-                class="icon-btn"
-                :disabled="index === state.groupChildIds.length - 1"
-                :aria-label="t('nodes.moveMemberDown')"
-                @click="actions.moveGroupChild(id, 'down')"
-              >
-                <UiIcon name="arrow-down" />
-              </button>
               <button
                 type="button"
                 class="icon-btn danger-text"
@@ -156,6 +179,27 @@ import UiSelect from '../../Components/Material/UiSelect.vue'
   min-width: 0;
   flex: 1 1 auto;
   overflow-wrap: anywhere;
+}
+
+.group-member-row.is-drag-source {
+  opacity: 0;
+}
+
+.member-drag-handle {
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.member-drag-handle:active {
+  cursor: grabbing;
+}
+
+.list-drag-ghost {
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 36%, transparent);
+  box-shadow: 0 14px 24px color-mix(in srgb, var(--md-sys-color-shadow) 32%, transparent);
 }
 
 .danger-text {

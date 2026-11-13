@@ -19,7 +19,16 @@ const { t } = useI18n()
 
 const protocol = computed(() => String(props.form.configType || ''))
 const protocolOptions = computed(() => optionValues(props.protocolTypes, props.form.configType))
-const coreOptions = computed(() => optionValues(props.coreTypes, props.form.coreType))
+// ServiceLib only runs PolicyGroup/ProxyChain on Xray or sing-box; offering the
+// other cores here lets a group save fail with the backend's generic
+// "profile invalid" reply.
+const groupCoreTypes = ['Xray', 'sing_box']
+const coreOptions = computed(() => optionValues(
+  props.isGroup
+    ? props.coreTypes.filter((core) => groupCoreTypes.includes(core))
+    : props.coreTypes,
+  props.form.coreType,
+))
 const coreLocked = computed(() => props.singboxOnly.includes(protocol.value))
 const addressLabel = computed(() => t(props.isCustom ? 'nodes.customConfigPath' : 'nodes.address'))
 </script>

@@ -408,7 +408,8 @@ button.list-item:hover {
 
 /* ---------- Table drag sorting ---------- */
 
-body.nova-table-dragging {
+body.nova-table-dragging,
+body.nova-list-dragging {
   cursor: grabbing;
   user-select: none;
 }
@@ -446,14 +447,18 @@ body.nova-table-dragging {
 }
 
 /* Cell backgrounds inherit the row so the current/selected tint survives the
-   clone, and the sticky action column stops sticking inside the ghost. */
+   clone. */
 .table-drag-ghost td {
   background-color: inherit;
 }
 
+/* The ghost shell is clipped to the table's visible scrollport, so keep the
+   action column pinned exactly where the real sticky column sits. */
 .table-drag-ghost td.cell-actions {
-  position: static;
-  border-left: 0;
+  position: sticky;
+  z-index: 1;
+  right: 0;
+  border-left: 1px solid var(--nova-color-divider);
   box-shadow: none;
   background-color: inherit;
 }

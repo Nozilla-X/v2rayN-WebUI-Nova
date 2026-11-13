@@ -297,6 +297,10 @@ function locateCurrent() {
   color: var(--md-sys-color-on-surface-variant);
   font-size: var(--md-sys-typescale-label-large-size);
   white-space: nowrap;
+  transition:
+    background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+    border-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+    color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
 }
 
 .group-chip:hover {
@@ -321,6 +325,7 @@ function locateCurrent() {
   background: color-mix(in srgb, currentColor 10%, transparent);
   font-size: var(--md-sys-typescale-label-small-size);
   font-variant-numeric: tabular-nums;
+  transition: background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
 }
 
 .nodes-feedback-slot {

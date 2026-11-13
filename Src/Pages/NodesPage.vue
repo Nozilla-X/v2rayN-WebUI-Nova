@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import NodesToolbar from '../Features/Nodes/NodesToolbar.vue'
 import NodesTable from '../Features/Nodes/NodesTable.vue'
@@ -30,6 +30,43 @@ const nodeColumnOptions = computed(() => NODE_COLUMNS.map((column) => ({
   label: t(column.labelKey),
   required: column.required,
 })))
+
+/*
+ * A subscription-group switch replaces every row, so the new list enters with
+ * a short fade and lift instead of snapping. The revision is bumped only after
+ * the replacement rows have loaded, which keeps the old rows visible during the
+ * request. Reduced motion shows the final state at once.
+ */
+const groupSwitching = ref(false)
+let groupSwitchFrame = 0
+let groupSwitchTimer = 0
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+watch(() => state.groupSwitchRevision, () => {
+  if (prefersReducedMotion()) return
+  if (groupSwitchFrame) cancelAnimationFrame(groupSwitchFrame)
+  if (groupSwitchTimer) window.clearTimeout(groupSwitchTimer)
+  groupSwitching.value = false
+  // Restart the CSS animation on the first frame that renders the new rows.
+  groupSwitchFrame = requestAnimationFrame(() => {
+    groupSwitchFrame = 0
+    groupSwitching.value = true
+    groupSwitchTimer = window.setTimeout(() => {
+      groupSwitchTimer = 0
+      groupSwitching.value = false
+    }, 280)
+  })
+})
+
+onBeforeUnmount(() => {
+  if (groupSwitchFrame) cancelAnimationFrame(groupSwitchFrame)
+  if (groupSwitchTimer) window.clearTimeout(groupSwitchTimer)
+})
 
 const bulkItems = computed<ActionMenuItem[]>(() => [
   { id: 'copy', label: t('nodes.copySelected'), icon: 'copy' },
@@ -67,10 +104,14 @@ function bulkAction(id: string) {
     </NodesToolbar>
 
     <div class="desktop-only">
-      <NodesTable :visible-columns="nodeVisibleColumns" />
+      <div class="nodes-group-view" :class="{ 'is-group-entering': groupSwitching }">
+        <NodesTable :visible-columns="nodeVisibleColumns" />
+      </div>
     </div>
     <div class="mobile-only">
-      <NodesMobileList />
+      <div class="nodes-group-view" :class="{ 'is-group-entering': groupSwitching }">
+        <NodesMobileList />
+      </div>
     </div>
 
     <div class="table-footer desktop-only">
@@ -108,6 +149,33 @@ function bulkAction(id: string) {
 <style scoped>
 .nodes-page {
   gap: var(--nova-space-3);
+}
+
+.nodes-group-view {
+  min-width: 0;
+}
+
+/* This wrapper is not a direct child of .page, so toggling the class never
+   swaps the page-item-enter animation and replays the page entrance. */
+.nodes-group-view.is-group-entering {
+  animation: nodes-group-enter var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+@keyframes nodes-group-enter {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nodes-group-view.is-group-entering {
+    animation: none;
+  }
 }
 
 .table-footer {

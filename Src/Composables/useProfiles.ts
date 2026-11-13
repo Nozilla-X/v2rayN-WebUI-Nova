@@ -1,7 +1,7 @@
 import { computed, reactive, ref, type Ref } from 'vue'
 import type { ApiError, ApiServices, Dict, ErrorHandler, Notice, Translate } from './types'
 import { canonicalNetwork } from '../profileEditorOptions'
-import { mergeFormEdits, normalizeProfileProtocolExtra, normalizeProfileTransportExtra, reconcileProfileExtraKeys } from './profilePayloads.ts'
+import { mergeFormEdits, multipleLoadEnum, multipleLoadName, normalizeProfileProtocolExtra, normalizeProfileTransportExtra, reconcileProfileExtraKeys } from './profilePayloads.ts'
 import { normalizeNullableNumbers } from './settingsPayloads.ts'
 import { mergeSpeedTestResult as mergeSpeedTestResultIntoRows } from './speedtestResults.ts'
 import { planSelectedMoves, planSelectedPositionMoves } from './movementOrder.ts'
@@ -34,6 +34,9 @@ export function useProfiles(options: ApiServices & {
   const profiles = ref<Dict[]>([])
   const groups = ref<Dict[]>([])
   const selectedGroup = ref('')
+  // Bumped when a subscription-group switch has finished loading its nodes,
+  // so the list can animate the replacement instead of snapping.
+  const groupSwitchRevision = ref(0)
   const filter = ref('')
   const selectedIds = ref<string[]>([])
   const focusedProfileId = ref('')
@@ -122,11 +125,14 @@ export function useProfiles(options: ApiServices & {
   async function changeGroup(groupId: string) {
     try {
       await options.request('/api/profile-groups/current', { method: 'PUT', body: { subscriptionId: groupId || null } })
+      const switching = selectedGroup.value !== groupId
       selectedGroup.value = groupId
       selectedIds.value = []
       selectionAnchorId = ''
       focusedProfileId.value = ''
       await loadProfiles()
+      // A newer switch may have taken over while this response was in flight.
+      if (switching && selectedGroup.value === groupId) groupSwitchRevision.value += 1
     } catch (error) { options.showError(error) }
   }
 
@@ -453,13 +459,15 @@ export function useProfiles(options: ApiServices & {
       if (configType === 'VMess' && !protoExtra.vmessSecurity) protoExtra.vmessSecurity = editorOptions.value.defaultSecurity || editorOptions.value.vmessSecurities?.[0] || ''
       if (configType === 'VLESS' && !protoExtra.vlessEncryption) protoExtra.vlessEncryption = editorOptions.value.defaultVlessEncryption
       if (configType === 'WireGuard' && protoExtra.wgMtu == null) protoExtra.wgMtu = editorOptions.value.defaultWireGuardMtu
+      const nextProtoExtra: Dict = { ...protoExtra, childItems: parseList(protoExtra.childItems) }
+      if (configType === 'PolicyGroup') nextProtoExtra.multipleLoad = multipleLoadName(protoExtra.multipleLoad)
       const nextForm = {
         ...details,
         configType,
         coreType: details.coreType ? options.canonicalCode(details.coreType, coreTypes.value) : '',
         network: canonicalNetwork(details.network, editorOptions.value.networks || [], editorOptions.value.defaultNetwork),
         allowInsecure: details.allowInsecure === 'true',
-        protoExtra: { ...protoExtra, childItems: parseList(protoExtra.childItems) },
+        protoExtra: nextProtoExtra,
         transportExtra,
       }
       const nextGroupChildIds = parseList(protoExtra.childItems)
@@ -485,6 +493,9 @@ export function useProfiles(options: ApiServices & {
     const targetId = editingProfileId.value
     try {
       const advanced = JSON.parse(profileAdvancedJson.value || '{}')
+      if (!advanced || typeof advanced !== 'object' || Array.isArray(advanced)) {
+        throw new SyntaxError('Expected a profile object.')
+      }
       const advancedProtoExtra = parseObject(advanced.protoExtra)
       const advancedTransportExtra = parseObject(advanced.transportExtra)
       const currentProtoExtra = profileForm.value.protoExtra || {}
@@ -510,14 +521,24 @@ export function useProfiles(options: ApiServices & {
       const isGroupProfile = ['PolicyGroup', 'ProxyChain'].includes(profileForm.value.configType)
       const isCustomFileProfile = ['Custom', 'Outbound'].includes(profileForm.value.configType)
       if (isGroupProfile) {
-        if (!groupChildIds.value.length && !protoExtra.subChildItems) {
+        // A group cannot contain itself (ServiceLib's HasCycle rejects it),
+        // and empty ids would fail the member lookup.
+        const memberIds = groupChildIds.value.filter((id) => id && id !== targetId)
+        if (!memberIds.length && !protoExtra.subChildItems) {
           profileModalError.value = t('nodes.groupChildRequired')
           return
         }
         protoExtra.groupType = profileForm.value.configType
-        protoExtra.childItems = groupChildIds.value.join(',')
+        protoExtra.childItems = memberIds.join(',')
         if (profileForm.value.configType === 'PolicyGroup') {
-          protoExtra.multipleLoad = profileForm.value.protoExtra.multipleLoad || 'LeastPing'
+          // ServiceLib's ProtoExtra reader has no string-enum converter; the
+          // stored value must be the EMultipleLoad number. Respect an explicit
+          // edit in the advanced JSON when the strategy dropdown is untouched.
+          const formMultipleLoad = profileForm.value.protoExtra.multipleLoad
+          const editedMultipleLoad = formMultipleLoad !== initialProtoExtra.multipleLoad
+            ? formMultipleLoad
+            : protoExtra.multipleLoad ?? formMultipleLoad
+          protoExtra.multipleLoad = multipleLoadEnum(editedMultipleLoad)
         } else {
           delete protoExtra.multipleLoad
         }
@@ -625,13 +646,13 @@ export function useProfiles(options: ApiServices & {
     groupChildIds.value = groupChildIds.value.includes(id) ? groupChildIds.value.filter((item) => item !== id) : [...groupChildIds.value, id]
   }
 
-  function moveGroupChild(id: string, direction: 'up' | 'down') {
-    const index = groupChildIds.value.indexOf(id)
-    const next = direction === 'up' ? index - 1 : index + 1
-    if (index < 0 || next < 0 || next >= groupChildIds.value.length) return
-    const ordered = [...groupChildIds.value]
-    ;[ordered[index], ordered[next]] = [ordered[next], ordered[index]]
-    groupChildIds.value = ordered
+  function reorderGroupChild(nextIds: string[]) {
+    const current = groupChildIds.value
+    if (nextIds.length !== current.length) return
+    const allowed = new Set(current)
+    if (new Set(nextIds).size !== current.length || nextIds.some((id) => !allowed.has(id))) return
+    if (nextIds.every((id, index) => id === current[index])) return
+    groupChildIds.value = [...nextIds]
   }
 
   async function loadProfileCatalog() {
@@ -680,6 +701,7 @@ export function useProfiles(options: ApiServices & {
     profiles.value = []
     groups.value = []
     selectedGroup.value = ''
+    groupSwitchRevision.value = 0
     filter.value = ''
     selectedIds.value = []
     selectionAnchorId = ''
@@ -703,7 +725,7 @@ export function useProfiles(options: ApiServices & {
     profileModalError.value = ''
   }
 
-  const nodesPageState = reactive({ filteredProfiles, profiles, selectedGroup, groups, filter, selectedIds, focusedProfileId, allVisibleSelected, sorting, operations: options.operations })
+  const nodesPageState = reactive({ filteredProfiles, profiles, selectedGroup, groupSwitchRevision, groups, filter, selectedIds, focusedProfileId, allVisibleSelected, sorting, operations: options.operations })
   const profileModalState = reactive({ showProfileForm, profileForm, profileAdvancedJson, profileModalError, editingProfileId, protocolTypes, coreTypes, profileCatalog, groupChildIds, groups, editorOptions })
   const importProfilesModalState = reactive({ showImportForm, importForm, groups })
   const exportModalState = reactive({ showExportDialog, exportOptions, exportContent })
@@ -713,7 +735,7 @@ export function useProfiles(options: ApiServices & {
     openEditProfile, selectProfile, startSpeedTest, runProfileAction, reset,
     nodesPageState, profileModalState, importProfilesModalState, exportModalState,
     nodesPageActions: { openAddProfile, openImportProfiles, startSpeedTest, runProfileAction, stopSpeedTests, applySpeedTestResult, changeGroup, generateGroups, loadProfiles, toggleAllVisible, toggleProfile, sortProfiles, moveProfileToPosition, selectProfile, formatDelay, moveSelectedToGroup, moveSelected, moveSelectedPosition, exportSelected, openContext, openSubscriptionContext, focusProfile, setFocusedProfile, handleRowKeydown },
-    profileModalActions: { saveProfile, toggleGroupChild, moveGroupChild, closeProfileEditor },
+    profileModalActions: { saveProfile, toggleGroupChild, reorderGroupChild, closeProfileEditor },
     importProfilesModalActions: { importProfiles, readImportFile, pasteImport },
     exportModalActions: { exportSelected, copyExport, downloadExport },
   }

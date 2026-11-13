@@ -8,6 +8,12 @@ import type { Directive } from 'vue'
  * an expanded section into view when its content would overflow the scrollport,
  * which keeps long editors (routing JSON, DNS JSON, advanced rule JSON) from
  * opening entirely below the fold.
+ *
+ * A details element only reports the new state after it has already opened or
+ * closed, and beforetoggle is not fired for details at all (it belongs to
+ * popovers and dialogs). The summary click is therefore intercepted to take
+ * over both directions; the toggle listener only covers open attribute changes
+ * made from script.
  */
 
 const CONTENT_SELECTOR = ':scope > .ui-details-content'
@@ -20,13 +26,10 @@ const CLOSE_EASING = 'cubic-bezier(0.3, 0, 0.8, 0.15)'
 interface DetailsState {
   content: HTMLElement
   animation?: Animation
-  ignoreClose: boolean
 }
 
 const states = new WeakMap<HTMLDetailsElement, DetailsState>()
 const cleanups = new WeakMap<HTMLDetailsElement, () => void>()
-
-type DetailsToggleEvent = Event & { newState: 'open' | 'closed' }
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined'
@@ -75,47 +78,21 @@ function cancelAnimation(state: DetailsState): void {
   state.animation = undefined
 }
 
-function animate(details: HTMLDetailsElement, state: DetailsState, opening: boolean, event?: Event): void {
+function animateOpen(details: HTMLDetailsElement, state: DetailsState): void {
   if (prefersReducedMotion()) {
     clearAnimationStyles(state.content)
-    if (opening) scrollDisclosureIntoView(details, state.content)
+    scrollDisclosureIntoView(details, state.content)
     return
   }
-  if (state.animation) {
-    event?.preventDefault()
-    return
-  }
-
-  if (!opening) {
-    const current = state.content.getBoundingClientRect().height
-    if (current <= 0) return
-    event?.preventDefault()
-    state.content.style.overflow = 'hidden'
-    state.content.style.height = `${current}px`
-    state.content.style.willChange = 'height'
-    void state.content.offsetHeight
-    const animation = state.content.animate(
-      [
-        { height: `${current}px`, opacity: 1 },
-        { height: '0px', opacity: 0 },
-      ],
-      { duration: CLOSE_DURATION, easing: CLOSE_EASING },
-    )
-    state.animation = animation
-    animation.onfinish = () => {
-      if (state.animation !== animation) return
-      state.animation = undefined
-      clearAnimationStyles(state.content)
-      state.ignoreClose = true
-      details.open = false
-    }
-    return
-  }
+  if (state.animation) return
 
   // Measure before pinning the wrapper at zero: an overflow-hidden box still
   // reports its full scroll height, so the target stays exact.
   const target = state.content.scrollHeight
-  if (target <= 0) return
+  if (target <= 0) {
+    clearAnimationStyles(state.content)
+    return
+  }
   state.content.style.overflow = 'hidden'
   state.content.style.height = '0px'
   state.content.style.willChange = 'height'
@@ -136,26 +113,63 @@ function animate(details: HTMLDetailsElement, state: DetailsState, opening: bool
   scrollDisclosureIntoView(details, state.content)
 }
 
-function onBeforeToggle(event: Event): void {
+function animateClose(details: HTMLDetailsElement, state: DetailsState): void {
+  if (prefersReducedMotion()) {
+    clearAnimationStyles(state.content)
+    details.open = false
+    return
+  }
+  if (state.animation) return
+
+  const current = state.content.getBoundingClientRect().height
+  if (current <= 0) {
+    clearAnimationStyles(state.content)
+    details.open = false
+    return
+  }
+  state.content.style.overflow = 'hidden'
+  state.content.style.height = `${current}px`
+  state.content.style.willChange = 'height'
+  void state.content.offsetHeight
+  const animation = state.content.animate(
+    [
+      { height: `${current}px`, opacity: 1 },
+      { height: '0px', opacity: 0 },
+    ],
+    { duration: CLOSE_DURATION, easing: CLOSE_EASING },
+  )
+  state.animation = animation
+  animation.onfinish = () => {
+    if (state.animation !== animation) return
+    state.animation = undefined
+    clearAnimationStyles(state.content)
+    details.open = false
+  }
+}
+
+function onSummaryClick(event: MouseEvent): void {
   const details = event.currentTarget as HTMLDetailsElement
   const state = states.get(details)
   if (!state) return
-  const toggle = event as DetailsToggleEvent
-  if (toggle.newState === 'open') {
-    if (prefersReducedMotion()) return
-    if (state.animation) {
-      event.preventDefault()
-      return
-    }
-    // Pin the body before the browser paints the opened state, so the first
-    // frame starts at the summary edge instead of flashing full content.
-    state.content.style.overflow = 'hidden'
-    state.content.style.height = '0px'
-    state.content.style.willChange = 'height'
+  const target = event.target as Element | null
+  const summary = target?.closest('summary')
+  if (!summary || summary.parentElement !== details) return
+  if (prefersReducedMotion()) return
+  if (state.animation) {
+    // Keep the open attribute in sync with the running animation; a second
+    // click must not toggle the native state behind its finish handler.
+    event.preventDefault()
     return
   }
-  if (toggle.newState !== 'closed' || state.ignoreClose) return
-  animate(details, state, false, event)
+  event.preventDefault()
+  if (details.open) {
+    animateClose(details, state)
+    return
+  }
+  // Set the open state ourselves so the content can be measured (and pinned
+  // at zero) synchronously, before the browser paints the fully open section.
+  details.open = true
+  animateOpen(details, state)
 }
 
 function onToggle(event: Event): void {
@@ -163,14 +177,11 @@ function onToggle(event: Event): void {
   const state = states.get(details)
   if (!state) return
   if (details.open) {
-    if (state.ignoreClose) {
-      state.ignoreClose = false
-      return
-    }
-    animate(details, state, true)
+    // Covers open attribute changes made from script; a summary click already
+    // started its animation and is ignored here.
+    animateOpen(details, state)
     return
   }
-  state.ignoreClose = false
   cancelAnimation(state)
   clearAnimationStyles(state.content)
 }
@@ -180,32 +191,17 @@ export const vDetailsMotion: Directive<HTMLDetailsElement> = {
     const content = details.querySelector<HTMLElement>(CONTENT_SELECTOR)
     if (!content) return
     details.classList.add('ui-details-motion')
-    const state: DetailsState = { content, ignoreClose: false }
+    const state: DetailsState = { content }
     states.set(details, state)
 
-    const before = (event: Event) => onBeforeToggle(event)
+    const clicked = (event: MouseEvent) => onSummaryClick(event)
     const toggled = (event: Event) => onToggle(event)
-    details.addEventListener('beforetoggle', before)
+    details.addEventListener('click', clicked)
     details.addEventListener('toggle', toggled)
 
-    // Older engines without beforetoggle can still animate closing by taking
-    // over the summary click. Keyboard activation produces the same click.
-    let clicked: ((event: MouseEvent) => void) | undefined
-    if (!('onbeforetoggle' in HTMLDetailsElement.prototype)) {
-      clicked = (event: MouseEvent) => {
-        if (!details.open || prefersReducedMotion()) return
-        const target = event.target as Element | null
-        const summary = target?.closest('summary')
-        if (!summary || summary.parentElement !== details) return
-        animate(details, state, false, event)
-      }
-      details.addEventListener('click', clicked)
-    }
-
     cleanups.set(details, () => {
-      details.removeEventListener('beforetoggle', before)
+      details.removeEventListener('click', clicked)
       details.removeEventListener('toggle', toggled)
-      if (clicked) details.removeEventListener('click', clicked)
       cancelAnimation(state)
       clearAnimationStyles(content)
     })

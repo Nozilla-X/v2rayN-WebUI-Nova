@@ -445,9 +445,9 @@ const fixtures = [
     coreType: 'Xray', network: '', streamSecurity: '', username: '', password: '', address: '',
     proto: {
       GroupType: 'PolicyGroup', ChildItems: 'child-a,child-b', SubChildItems: '',
-      Filter: 'hk|jp', MultipleLoad: 'LeastPing',
+      Filter: 'hk|jp', MultipleLoad: 0,
     },
-    stale: { groupType: '', multipleLoad: 'Random' },
+    stale: { groupType: '', multipleLoad: 2 },
   }),
   makeFixture('ProxyChain', {
     coreType: 'Xray', network: '', streamSecurity: '', username: '', password: '', address: '',
@@ -592,4 +592,49 @@ test('the raw legacy payload exports the downgraded value under backend rules', 
   const legacy = exportSnapshot(vless, 'last')
   assert.equal(legacy.protoExtra.vlessEncryption, 'none')
   assert.notDeepEqual(legacy, working)
+})
+
+test('policy group strategy is always submitted as a numeric EMultipleLoad', async (t) => {
+  const harness = createSourceHarness()
+  const fixture = fixtures.find((item) => item.configType === 'policyGroup')
+  assert.ok(fixture)
+  try {
+    await t.test('an untouched save keeps the stored enum value', async () => {
+      const api = createApi(cleanFixture(fixture))
+      const profiles = createProfiles(harness, api)
+      await profiles.openEditProfile({ indexId: fixture.indexId })
+      await profiles.profileModalActions.saveProfile()
+      const body = api.savedBodies.at(-1)
+      assert.ok(body)
+      assert.equal(JSON.parse(body.protoExtra).multipleLoad, 0)
+    })
+
+    await t.test('the strategy dropdown writes the matching number', async () => {
+      const api = createApi(cleanFixture(fixture))
+      const profiles = createProfiles(harness, api)
+      await profiles.openEditProfile({ indexId: fixture.indexId })
+      profiles.profileModalState.profileForm.protoExtra.multipleLoad = 'Random'
+      await profiles.profileModalActions.saveProfile()
+      const body = api.savedBodies.at(-1)
+      assert.ok(body)
+      assert.equal(JSON.parse(body.protoExtra).multipleLoad, 2)
+    })
+
+    await t.test('an advanced-JSON edit still wins while the dropdown is untouched', async () => {
+      const api = createApi(cleanFixture(fixture))
+      const profiles = createProfiles(harness, api)
+      await profiles.openEditProfile({ indexId: fixture.indexId })
+      const advanced = JSON.parse(profiles.profileModalState.profileAdvancedJson)
+      const advancedProtoExtra = JSON.parse(advanced.protoExtra)
+      advancedProtoExtra.multipleLoad = 3
+      advanced.protoExtra = JSON.stringify(advancedProtoExtra)
+      profiles.profileModalState.profileAdvancedJson = JSON.stringify(advanced)
+      await profiles.profileModalActions.saveProfile()
+      const body = api.savedBodies.at(-1)
+      assert.ok(body)
+      assert.equal(JSON.parse(body.protoExtra).multipleLoad, 3)
+    })
+  } finally {
+    await harness.dispose()
+  }
 })

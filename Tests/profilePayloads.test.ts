@@ -1,6 +1,21 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { mergeFormEdits, reconcileProfileExtraKeys } from '../Src/Composables/profilePayloads.ts'
+import { mergeFormEdits, multipleLoadEnum, multipleLoadName, reconcileProfileExtraKeys } from '../Src/Composables/profilePayloads.ts'
+
+test('multiple load strategies use numeric ServiceLib enum values in protoExtra', () => {
+  // ServiceLib deserializes ProtocolExtraItem with System.Text.Json's default
+  // numeric enum handling. A strategy name such as "LeastPing" makes
+  // GetProtocolExtra() throw, and the Web API rejects the save.
+  assert.equal(multipleLoadName(0), 'LeastPing')
+  assert.equal(multipleLoadName(2), 'Random')
+  assert.equal(multipleLoadName(4), 'LeastLoad')
+  assert.equal(multipleLoadName('Fallback'), 'Fallback')
+  assert.equal(multipleLoadName(undefined), 'LeastPing')
+  assert.equal(multipleLoadEnum('LeastPing'), 0)
+  assert.equal(multipleLoadEnum('Fallback'), 1)
+  assert.equal(multipleLoadEnum(3), 3)
+  assert.equal(multipleLoadEnum(''), 0)
+})
 
 test('unsaved form fields keep values edited in the advanced JSON', () => {
   const advanced = { wgMtu: 900, customField: 'json-only' }

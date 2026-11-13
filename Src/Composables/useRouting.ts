@@ -295,14 +295,19 @@ export function useRouting(options: ApiServices & {
     } catch { options.showNotice(t('common.clipboardUnavailable'), 'error') }
   }
 
-  async function moveRoutingRule(rule: Dict, direction: string) {
+  async function moveRoutingRuleToPosition(ruleId: string, position: number) {
     try {
       const result = await options.request(`/api/settings/routing-profiles/${encodeURIComponent(selectedRoutingId.value)}/rules/move`, {
-        method: 'POST', body: { ruleId: rule.id, direction, position: -1 },
+        method: 'POST', body: { ruleId, direction: 'position', position },
       })
       options.showNotice(options.operationMessage(result))
       await loadRules()
-    } catch (error) { options.showError(error) }
+    } catch (error) {
+      options.showError(error)
+      // A card drag previews the new order locally; reload so a rejected move
+      // cannot leave the list showing an order the backend never accepted.
+      await loadRules()
+    }
   }
 
   async function moveSelectedRules(direction: string) {
@@ -398,7 +403,7 @@ export function useRouting(options: ApiServices & {
   return {
     activeRoutingId, selectedRoutingId, routes, routingForm, routingOptions, showRouteForm, loadRouting, loadRules, routingPageState, routeModalState, ruleModalState, routingFormRevision, savingRoutingStrategies,
     activateRoute, reset,
-    routingPageActions: { importRoutingProfiles, openAddRoute, loadRouting, loadRules, selectRoutingProfile, openEditRoute, deleteRoute, deleteSelectedRoutes, toggleAllRoutes, activateRoute, applyPreset, saveRoutingStrategies, addRoutingRule, openEditRoutingRule, saveRoutingRule, toggleAllRules, deleteSelectedRules, exportSelectedRules, moveSelectedRules, copyRoutingRules, saveRoutingRules, moveRoutingRule, removeRoutingRule, importRoutingRules, importRulesFromClipboard, readRulesFile, importRulesFromUrl },
+    routingPageActions: { importRoutingProfiles, openAddRoute, loadRouting, loadRules, selectRoutingProfile, openEditRoute, deleteRoute, deleteSelectedRoutes, toggleAllRoutes, activateRoute, applyPreset, saveRoutingStrategies, addRoutingRule, openEditRoutingRule, saveRoutingRule, toggleAllRules, deleteSelectedRules, exportSelectedRules, moveSelectedRules, copyRoutingRules, saveRoutingRules, moveRoutingRuleToPosition, removeRoutingRule, importRoutingRules, importRulesFromClipboard, readRulesFile, importRulesFromUrl },
     routeModalActions: { saveRoute },
     ruleModalActions: { saveRoutingRule },
   }
