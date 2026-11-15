@@ -115,6 +115,46 @@ async function eventFixture(t, extra = {}) {
   return { events, source: sources[0], sources, calls, clock }
 }
 
+test('SSE failures warn once after five retries, reset on success, and stop after close', async (t) => {
+  const notices = []
+  const ticketRequests = []
+  const { events, source: initialSource, sources, clock } = await eventFixture(t, {
+    request: async (route) => {
+      assert.equal(route, '/api/auth/sse-ticket')
+      ticketRequests.push(route)
+      return { data: { ticket: `ticket-${ticketRequests.length}` } }
+    },
+    showNotice: (message, kind) => notices.push([message, kind]),
+  })
+
+  let source = initialSource
+  for (const delay of [1000, 2000, 4000, 8000]) {
+    source.onerror()
+    assert.deepEqual(notices, [])
+    clock.tick(delay)
+    await settle()
+    source = sources.at(-1)
+  }
+  source.onerror()
+  assert.deepEqual(notices, [['backend.eventsUnavailable', 'warning']])
+
+  clock.tick(16000)
+  await settle()
+  source = sources.at(-1)
+  source.onopen(new Event('open'))
+  source.onerror()
+  assert.deepEqual(notices, [['backend.eventsUnavailable', 'warning']])
+
+  const ticketsAtClose = ticketRequests.length
+  const sourcesAtClose = sources.length
+  events.closeEvents()
+  clock.tick(60000)
+  await settle()
+  assert.equal(ticketRequests.length, ticketsAtClose)
+  assert.equal(sources.length, sourcesAtClose)
+  assert.equal(clock.pending, 0)
+})
+
 test('50,000 Geo progress events do not generate a request or render storm, while completion still refreshes', async (t) => {
   const { source, calls, clock } = await eventFixture(t)
   source.emit('core-update-progress', { coreType: 'GeoFiles', phase: 'downloading', isComplete: false })

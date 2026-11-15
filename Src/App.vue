@@ -32,7 +32,7 @@ import { useBackend } from './Composables/useBackend'
 import { useNodeActions } from './Features/Profiles/useNodeActions'
 import { useAppRoute } from './Composables/useAppRoute'
 import { readStoredValue, writeStoredValue } from './Composables/browserStorage'
-import { normalizeApiInput, networkFailureKey } from './Composables/apiEndpoint'
+import { normalizeApiInput } from './Composables/apiEndpoint'
 import { navTitleKey } from './Shell/navigation'
 import { APP_CONTEXT, type NovaApp } from './App/context'
 import type { Dict } from './Composables/types'
@@ -183,7 +183,6 @@ const events = useEvents({
   showNotice,
   matchesLogFilter: logs.matchesLogFilter,
   noteLiveLogBatch: logs.noteLiveLogBatch,
-  networkFailureMessage: () => t(networkFailureKey(backend.base.value)),
   loadGroups: profiles.loadGroups,
   loadProfiles: profiles.loadProfiles,
   loadSubscriptions: subscriptions.loadSubscriptions,

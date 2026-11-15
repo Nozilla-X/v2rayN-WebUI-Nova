@@ -18,7 +18,6 @@ export function useEvents(options: {
   onSubscriptionProgress?: (progress: Dict) => void
   request: RequestApi
   resolveUrl?: (path: string) => string
-  networkFailureMessage?: () => string
   t: Translate
   showNotice: Notice
   matchesLogFilter: (entry: Dict) => boolean
@@ -283,7 +282,7 @@ export function useEvents(options: {
     reconnectAttempts += 1
     if (reconnectAttempts >= 5 && !reconnectNotified) {
       reconnectNotified = true
-      options.showNotice(options.networkFailureMessage?.() || t('backend.networkFailure'), 'error')
+      options.showNotice(t('backend.eventsUnavailable'), 'warning')
     }
     reconnectTimer = setTimeout(() => {
       reconnectTimer = undefined

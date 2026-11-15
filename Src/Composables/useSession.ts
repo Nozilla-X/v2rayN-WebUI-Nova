@@ -36,7 +36,7 @@ export function useSession(options: {
   const publicRequest = options.publicRequest || fallbackApi.publicRequest
   const storageKey = options.storageKey || sessionStorageKey
 
-  async function loadSetupStatus() {
+  async function loadSetupStatus({ reportError = true }: { reportError?: boolean } = {}) {
     const generation = sessionGeneration
     try {
       const { response, payload } = await publicRequest('/api/setup/status')
@@ -46,7 +46,7 @@ export function useSession(options: {
       setupRequired.value = Boolean(setupStatus?.setupRequired)
       setupAllowedFromRequest.value = Boolean(setupStatus?.setupAllowedFromThisRequest)
     } catch (error) {
-      if (generation === sessionGeneration) options.showError(error)
+      if (generation === sessionGeneration && reportError) options.showError(error)
     } finally {
       if (generation === sessionGeneration) setupStatusReady.value = true
     }
@@ -80,7 +80,7 @@ export function useSession(options: {
     }
 
     try {
-      await loadSetupStatus()
+      await loadSetupStatus({ reportError: false })
       if (generation !== sessionGeneration || setupRequired.value) return
       const { response, payload } = await publicRequest('/api/auth/login', {
         method: 'POST',
