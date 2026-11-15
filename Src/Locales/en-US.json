@@ -46,7 +46,8 @@
     "timeout": "API connection timed out. Check the address, listener/firewall, CORS and local network permission.",
     "notApi": "This address did not return a v2rayN API health response. Check the port and path prefix.",
     "networkFailure": "API connection failed. Check the address, Backend listener/firewall and exact CORS allowed origin. The browser cannot reliably distinguish CORS from an unreachable server; check its Network/Console panel.",
-    "localNetworkFailure": "Could not connect to the local HTTP API from HTTPS. Allow local network access for this site, and check CORS and the listener/firewall. Some browsers also block HTTPS → HTTP or EventSource; use same-origin hosting or an HTTPS API if needed.",
+    "eventsUnavailable": "Live updates are temporarily unavailable; reconnecting. Status and logs may be delayed.",
+    "localNetworkFailure": "This request could not be completed. If the problem persists, check local network permissions, CORS, and backend configuration. Browsers may also restrict HTTPS pages from accessing HTTP APIs.",
     "mixedContentFailure": "An HTTPS WebUI cannot connect to this HTTP API in browsers that block mixed content. Use an HTTPS API or same-origin hosting."
   },
   "brandState": {

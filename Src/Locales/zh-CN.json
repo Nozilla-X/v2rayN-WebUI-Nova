@@ -46,7 +46,8 @@
     "timeout": "API 连接超时。请检查地址、监听/防火墙、CORS 和本地网络权限。",
     "notApi": "此地址没有返回 v2rayN API 健康响应，请检查端口和路径前缀。",
     "networkFailure": "API 连接失败。请检查地址、Backend 监听/防火墙和精确 CORS 白名单。浏览器不能可靠区分 CORS 拒绝与服务不可达，请查看开发者工具的网络/控制台。",
-    "localNetworkFailure": "HTTPS 页面无法连接本地 HTTP API。请允许此站点访问本地网络，并检查 CORS、监听和防火墙；部分浏览器还会限制 HTTPS → HTTP 或 EventSource，必要时使用同源部署或 HTTPS API。",
+    "eventsUnavailable": "实时更新暂时无法连接，正在重试。状态和日志可能延迟更新。",
+    "localNetworkFailure": "本次请求未能完成；若问题持续，可检查本地网络权限、CORS 和后端配置。HTTPS 页面访问 HTTP 接口也可能受浏览器限制。",
     "mixedContentFailure": "浏览器可能阻止 HTTPS WebUI 连接此 HTTP API（混合内容）。请使用 HTTPS API 或同源部署。"
   },
   "brandState": {

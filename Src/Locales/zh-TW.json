@@ -46,7 +46,8 @@
     "timeout": "API 連線逾時。請檢查位址、監聽/防火牆、CORS 及本機網路權限。",
     "notApi": "此位址沒有回傳 v2rayN API 健康回應，請檢查連接埠和路徑前綴。",
     "networkFailure": "API 連線失敗。請檢查位址、Backend 監聽/防火牆及精確 CORS 白名單。瀏覽器無法可靠區分 CORS 拒絕與服務無法連線，請查看開發工具的網路/主控台。",
-    "localNetworkFailure": "HTTPS 頁面無法連線至本機 HTTP API。請允許此網站存取本機網路，並檢查 CORS、監聽及防火牆；部分瀏覽器也會限制 HTTPS → HTTP 或 EventSource，必要時使用同源部署或 HTTPS API。",
+    "eventsUnavailable": "即時更新暫時無法連線，正在重新連線。狀態和記錄可能會延遲更新。",
+    "localNetworkFailure": "本次請求未能完成；若問題持續，可檢查本機網路權限、CORS 和後端設定。HTTPS 頁面存取 HTTP API 也可能受瀏覽器限制。",
     "mixedContentFailure": "瀏覽器可能阻止 HTTPS WebUI 連線至此 HTTP API（混合內容）。請使用 HTTPS API 或同源部署。"
   },
   "brandState": {
