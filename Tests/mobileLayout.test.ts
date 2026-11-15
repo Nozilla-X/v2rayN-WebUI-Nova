@@ -9,25 +9,32 @@ test('mobile navigation exposes exactly the three primary destinations and keeps
   const tabs = navigation.match(/MOBILE_TABS[^=]*=\s*\[([\s\S]*?)\]/)?.[1] || ''
   assert.deepEqual([...tabs.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1]), ['nodes', 'subscriptions', 'more'])
 
-  const moreGroups = navigation.match(/MORE_GROUPS[^=]*=\s*\[([\s\S]*?)\n\]\n/)?.[1] || ''
+  const moreGroups = navigation.match(/MORE_GROUPS[^=]*=\s*\[([\s\S]*?)\r?\n\]\r?\n/)?.[1] || ''
   for (const destination of ['routing', 'dns', 'settings', 'templates', 'maintenance', 'logs']) {
     assert.ok(moreGroups.includes(`id: '${destination}'`), `More links to ${destination}`)
   }
   assert.ok(!moreGroups.includes("id: 'more'"), 'More never links to itself')
 })
 
-test('the mobile tab bar is a floating glass surface with safe-area padding and three equal tabs', async () => {
-  const tabs = await read('Shell/MobileTabBar.vue')
-  const glass = await read('Design/glass.css')
-  assert.match(tabs, /class="mobile-tab-bar glass-surface"/)
+test('the mobile Material navigation bar floats with safe-area padding and three equal tabs', async () => {
+  const [tabs, navigationStyles, layout] = await Promise.all([
+    read('Shell/MobileTabBar.vue'),
+    read('Design/glass.css'),
+    read('Design/layout.css'),
+  ])
+  assert.match(tabs, /<nav class="mobile-tab-bar"[^>]*>/)
+  assert.match(tabs, /<md-navigation-bar :active-index\.attr="activeIndex">/)
   assert.equal([...tabs.matchAll(/v-for="item in MOBILE_TABS"/g)].length, 1)
-  assert.match(tabs, /:style="\{ '--tab-offset': `\$\{activeIndex \* 100\}%` \}"/)
+  assert.match(tabs, /:active\.prop="activeId === item\.id"/)
   assert.match(tabs, /isPrimaryPage\(route\.currentPage\.value\) \? route\.currentPage\.value : 'more'/)
-  assert.match(glass, /\.mobile-tab-bar\s*\{[^}]*position: fixed/)
-  assert.match(glass, /bottom: calc\(var\(--nova-space-2\) \+ var\(--nova-safe-bottom\)\)/)
-  assert.match(glass, /left: max\(var\(--nova-space-3\), var\(--nova-safe-left\)\)/)
-  assert.match(glass, /width: calc\(\(100% - 12px\) \/ 3\)/)
-  assert.match(glass, /@media \(max-width: 860px\)\s*\{[\s\S]*?\.mobile-tab-bar \{\s*display: flex/)
+  assert.match(navigationStyles, /\.mobile-tab-bar\s*\{[^}]*position: fixed/)
+  assert.match(navigationStyles, /bottom: calc\(16px \+ var\(--nova-safe-bottom\)\)/)
+  assert.match(navigationStyles, /left: max\(16px, var\(--nova-safe-left\)\)/)
+  assert.match(navigationStyles, /\.mobile-tab-bar\s*\{[^}]*overflow: hidden;[^}]*border-radius: var\(--md-sys-shape-corner-extra-large\)/)
+  assert.match(navigationStyles, /\.mobile-tab-bar md-navigation-tab\s*\{[^}]*flex: 1 1 0/)
+  assert.match(navigationStyles, /@media \(max-width: 860px\)\s*\{[\s\S]*?\.mobile-tab-bar \{\s*display: grid/)
+  assert.match(layout, /scroll-padding-bottom:\s*calc\(var\(--nova-mobile-nav-height\) \+ var\(--nova-safe-bottom\) \+ var\(--nova-space-4\)\)/)
+  assert.match(layout, /\.workspace\s*\{[^}]*var\(--nova-mobile-nav-height\) \+ var\(--nova-safe-bottom\)/)
 })
 
 test('the floating Back button appears only on secondary pages and delegates to guarded in-app history', async () => {
