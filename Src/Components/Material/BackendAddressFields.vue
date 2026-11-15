@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import UiButton from './UiButton.vue'
+import UiIconButton from './UiIconButton.vue'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiIcon from './UiIcon.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: string
   testing: boolean
   error: string
   history: string[]
-}>()
+  showApply?: boolean
+}>(), {
+  showApply: true,
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -128,47 +132,55 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="backend-fields">
-    <md-outlined-text-field
-      ref="field"
-      class="backend-address-field"
-      :label="t('backend.address')"
-      :value="modelValue"
-      :error="Boolean(error)"
-      :error-text="error || undefined"
-      type="url"
-      inputmode="url"
-      autocomplete="url"
-      spellcheck="false"
-      placeholder="https://example.com"
-      @input="onInput"
-      @keydown.enter.prevent="emit('test')"
-    >
-      <md-icon-button
-        v-if="history.length"
-        ref="historyTrigger"
-        type="button"
-        slot="trailing-icon"
-        class="history-trigger"
-        :aria-label="t('backend.history')"
-        aria-haspopup="menu"
-        :aria-expanded="menuOpen"
-        @click="menuOpen ? closeMenu() : openMenu()"
+    <div class="backend-address-row">
+      <md-outlined-text-field
+        ref="field"
+        class="backend-address-field"
+        :label="t('backend.address')"
+        :value="modelValue"
+        :error="Boolean(error)"
+        :error-text="error || undefined"
+        type="text"
+        inputmode="url"
+        autocomplete="url"
+        spellcheck="false"
+        placeholder="192.168.1.10:5080"
+        @input="onInput"
+        @keydown.enter.prevent="emit('test')"
       >
-        <UiIcon name="clock" :size="20" />
-      </md-icon-button>
-    </md-outlined-text-field>
-
-    <div class="backend-field-actions">
-      <UiButton
-        type="button"
-        class="btn btn-outlined"
-        icon="wifi"
-        :loading="testing"
+        <md-icon-button
+          v-if="history.length"
+          ref="historyTrigger"
+          type="button"
+          slot="trailing-icon"
+          class="history-trigger"
+          :aria-label="t('backend.history')"
+          aria-haspopup="menu"
+          :aria-expanded="menuOpen"
+          @click="menuOpen ? closeMenu() : openMenu()"
+        >
+          <UiIcon name="clock" :size="20" />
+        </md-icon-button>
+      </md-outlined-text-field>
+      <UiIconButton
+        class="backend-test-button"
+        :label="t('backend.test')"
+        size="medium"
         :disabled="testing"
+        :aria-busy="testing ? 'true' : undefined"
         @click="emit('test')"
       >
-        {{ t('backend.test') }}
-      </UiButton>
+        <md-circular-progress
+          v-if="testing"
+          class="backend-test-progress"
+          indeterminate
+          aria-hidden="true"
+        />
+        <UiIcon v-else name="wifi" :size="20" />
+      </UiIconButton>
+    </div>
+
+    <div v-if="showApply" class="backend-field-actions">
       <UiButton type="button" class="btn btn-tonal" :disabled="testing" @click="emit('apply')">
         {{ t('backend.apply') }}
       </UiButton>
@@ -209,9 +221,24 @@ onBeforeUnmount(() => {
   gap: var(--nova-space-3);
 }
 
+.backend-address-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  align-items: start;
+  gap: var(--nova-space-2);
+}
+
 .backend-address-field {
   width: 100%;
   min-width: 0;
+}
+
+.backend-test-button {
+  align-self: start;
+}
+
+.backend-test-progress {
+  --md-circular-progress-size: 20px;
 }
 
 .history-trigger {

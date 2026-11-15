@@ -1,7 +1,7 @@
 /*
- * Liquid Glass is a local enhancement for the mobile navigation, floating Back
- * button and a few transient surfaces. The opaque fallback is the default; the
- * translucent material only activates when the browser can blur it.
+ * Liquid Glass is a local enhancement for the floating Back button and a few
+ * transient surfaces. The opaque fallback is the default; the translucent
+ * material only activates when the browser can blur it.
  */
 
 .glass-surface {
@@ -86,84 +86,74 @@
   }
 }
 
-/* ---------- Mobile floating tab bar ---------- */
+/* ---------- Material 3 mobile navigation bar ---------- */
 
 .mobile-tab-bar {
+  --md-navigation-bar-container-color: var(--md-sys-color-surface-container);
   position: fixed;
   z-index: var(--nova-z-mobile-nav);
-  right: max(var(--nova-space-3), var(--nova-safe-right));
-  bottom: calc(var(--nova-space-2) + var(--nova-safe-bottom));
-  left: max(var(--nova-space-3), var(--nova-safe-left));
+  right: max(16px, var(--nova-safe-right));
+  bottom: calc(16px + var(--nova-safe-bottom));
+  left: max(16px, var(--nova-safe-left));
   display: none;
   width: auto;
-  max-width: 440px;
-  height: 72px;
-  align-items: stretch;
+  max-width: 480px;
+  height: 80px;
+  box-sizing: border-box;
   margin-inline: auto;
-  padding: 6px;
+  padding: 0;
+  overflow: hidden;
   border-radius: var(--md-sys-shape-corner-extra-large);
+  background: var(--md-navigation-bar-container-color);
+  box-shadow: var(--md-sys-elevation-level2);
   -webkit-tap-highlight-color: transparent;
 }
 
-.mobile-tab-indicator {
-  position: absolute;
-  z-index: 0;
-  top: 6px;
-  bottom: 6px;
-  left: 6px;
-  width: calc((100% - 12px) / 3);
-  border-radius: var(--md-sys-shape-corner-large);
-  background: color-mix(in srgb, var(--md-sys-color-secondary-container) 86%, transparent);
-  box-shadow: inset 0 1px 0 var(--nova-glass-highlight-soft);
-  transform: translateX(var(--tab-offset, 0%));
-  transition: transform var(--nova-motion-glass) var(--nova-motion-spring);
-  pointer-events: none;
+.mobile-tab-bar md-navigation-bar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  --md-navigation-bar-container-height: 80px;
+  --md-navigation-bar-container-shape: var(--md-sys-shape-corner-extra-large);
+  --md-navigation-bar-container-elevation: 0;
 }
 
-.mobile-tab {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  min-width: 0;
+.mobile-tab-bar md-navigation-tab {
   flex: 1 1 0;
-  place-content: center;
-  justify-items: center;
-  gap: 4px;
-  padding: 0 var(--nova-space-1);
-  border: 0;
-  border-radius: var(--md-sys-shape-corner-large);
-  background: transparent;
-  color: var(--md-sys-color-on-surface-variant);
-  font-size: var(--md-sys-typescale-label-medium-size);
-  font-weight: var(--md-sys-typescale-label-medium-weight);
-  line-height: var(--md-sys-typescale-label-medium-line-height);
-  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
-  white-space: nowrap;
-  transition: color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+  min-width: 0;
+  /* The icon-slot ripple replaces the component's full-tab state layer. */
+  --md-navigation-bar-hover-state-layer-opacity: 0;
+  --md-navigation-bar-pressed-state-layer-opacity: 0;
 }
 
-.mobile-tab .ui-icon {
+.mobile-tab-icon {
+  position: relative;
+  display: block;
   width: 24px;
   height: 24px;
-  transition: transform var(--nova-motion-glass) var(--nova-motion-spring);
 }
 
-.mobile-tab.is-active {
-  color: var(--md-sys-color-on-secondary-container);
-  font-weight: 600;
+.mobile-tab-bar .mobile-tab-state-layer {
+  position: absolute;
+  z-index: 0;
+  inset: 50% auto auto 50%;
+  width: 64px;
+  height: 32px;
+  margin: 0;
+  border-radius: var(--md-sys-shape-corner-full);
+  transform: translate(-50%, -50%);
+  --md-ripple-hover-color: var(--md-sys-color-on-surface);
+  --md-ripple-pressed-color: var(--md-sys-color-on-surface);
+  --md-ripple-hover-opacity: var(--md-sys-state-hover-state-layer-opacity);
+  --md-ripple-pressed-opacity: var(--md-sys-state-pressed-state-layer-opacity);
 }
 
-.mobile-tab.is-active .ui-icon {
-  transform: translateY(-1px) scale(1.04);
-}
-
-.mobile-tab:active .ui-icon {
-  transform: scale(0.9);
-}
-
-.mobile-tab:focus-visible {
-  outline: var(--nova-focus-ring);
-  outline-offset: -2px;
+.mobile-tab-bar .ui-icon {
+  position: relative;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
 }
 
 /* ---------- Floating Back button ---------- */
@@ -200,7 +190,7 @@
 
 @media (max-width: 860px) {
   .mobile-tab-bar {
-    display: flex;
+    display: grid;
   }
 
   .mobile-back-button {
@@ -216,9 +206,21 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mobile-tab-indicator,
-  .mobile-tab .ui-icon,
   .mobile-back-button {
     transition: none;
+  }
+
+  .mobile-back-button:active {
+    transform: none;
+  }
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .mobile-tab-bar {
+    box-shadow: none;
+  }
+
+  .mobile-tab-bar md-navigation-bar::part(elevation) {
+    box-shadow: none;
   }
 }

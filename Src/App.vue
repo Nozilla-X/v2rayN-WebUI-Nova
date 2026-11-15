@@ -32,7 +32,7 @@ import { useBackend } from './Composables/useBackend'
 import { useNodeActions } from './Features/Profiles/useNodeActions'
 import { useAppRoute } from './Composables/useAppRoute'
 import { readStoredValue, writeStoredValue } from './Composables/browserStorage'
-import { normalizeApiBase, networkFailureKey } from './Composables/apiEndpoint'
+import { normalizeApiInput, networkFailureKey } from './Composables/apiEndpoint'
 import { navTitleKey } from './Shell/navigation'
 import { APP_CONTEXT, type NovaApp } from './App/context'
 import type { Dict } from './Composables/types'
@@ -258,7 +258,7 @@ clearSession = session.clearSession
 function applyBackend(): boolean {
   backend.error.value = ''
   try {
-    const normalized = normalizeApiBase(backend.draft.value)
+    const normalized = normalizeApiInput(backend.draft.value)
     if (normalized !== backend.base.value) {
       const revokeOldSession = api.captureSessionRevocation()
       connectionGeneration += 1
@@ -430,6 +430,11 @@ watch([activePage, locale], () => {
 
 onMounted(async () => {
   if (!backend.isSameOrigin()) {
+    session.setupStatusReady.value = true
+    return
+  }
+  // Avoid probing same-origin APIs on a first visit without a configured backend.
+  if (!backend.base.value && !sessionToken.value) {
     session.setupStatusReady.value = true
     return
   }

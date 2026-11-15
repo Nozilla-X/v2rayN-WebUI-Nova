@@ -174,7 +174,7 @@ function onCompositionEnd() {
           :testing="state.connectionTesting.value"
           :error="backend.error.value"
           :history="backend.history.value"
-          @apply="actions.applyBackend"
+          :show-apply="false"
           @test="actions.testConnection"
           @forget="backend.forget"
         />
