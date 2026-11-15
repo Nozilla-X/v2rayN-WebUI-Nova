@@ -10,6 +10,30 @@ export function normalizeApiBase(value: string): string {
   return url.origin + url.pathname.replace(/\/+$/, '')
 }
 
+// Accept shorthand only at the input boundary; stored endpoints and API URLs
+// continue to use the strict, explicit-protocol normalizer above.
+export function normalizeApiInput(value: string): string {
+  const input = value.trim()
+  if (!input || /^https?:\/\//i.test(input)) return normalizeApiBase(input)
+
+  // Require a hostname or bracketed IPv6 address, an optional numeric port,
+  // and an optional path. Scheme-relative URLs and credentials are not input shortcuts.
+  if (!/^(?:\[[^\]]+\]|[^:/@\s\\?#]+)(?::\d+)?(?:\/.*)?$/.test(input)) {
+    throw new Error('backend.invalidEndpoint')
+  }
+
+  const candidate = new URL(normalizeApiBase(`http://${input}`))
+  const host = candidate.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+  // Parsing with both schemes retains an explicitly supplied default port.
+  const port = candidate.port || new URL(normalizeApiBase(`https://${input}`)).port
+  const local = addressSpace(candidate.href) !== 'public'
+    || host.endsWith('.local')
+    || (!host.includes('.') && !host.includes(':'))
+  const protocol = port === '443' ? 'https:' : port === '80' ? 'http:' : local ? 'http:' : 'https:'
+
+  return normalizeApiBase(`${protocol}//${input}`)
+}
+
 export function resolveApiUrl(path: string, base = ''): string {
   if (!/^\/api(?:\/|\?|$)/.test(path) || /[\\#\u0000-\u001f]/.test(path)) throw new Error('Invalid API route')
   const normalized = normalizeApiBase(base)
