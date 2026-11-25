@@ -16,10 +16,9 @@ const props = defineProps<{
   title: string
   columns: ColumnOption[]
   modelValue: string[]
-  allowWidthReset?: boolean
 }>()
 
-const emit = defineEmits<{ close: []; 'update:modelValue': [ids: string[]]; 'reset-widths': [] }>()
+const emit = defineEmits<{ close: []; 'update:modelValue': [ids: string[]] }>()
 const { t } = useI18n()
 const draft = ref<string[]>([])
 
@@ -58,7 +57,6 @@ function done() {
       </label>
     </div>
     <template #actions>
-      <UiButton v-if="allowWidthReset" type="button" class="btn btn-text" @click="emit('reset-widths')">{{ t('nodes.resetColumnWidths') }}</UiButton>
       <UiButton type="button" class="btn btn-text" @click="reset">{{ t('common.resetDefaults') }}</UiButton>
       <UiButton type="button" class="btn btn-filled" @click="done">{{ t('common.done') }}</UiButton>
     </template>

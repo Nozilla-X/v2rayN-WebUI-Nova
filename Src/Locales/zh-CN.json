@@ -259,8 +259,6 @@
     "customExport": "自定义导出",
     "autoFitColumns": "自动调整列宽",
     "columnSettings": "列设置",
-    "resizeColumn": "调整列宽",
-    "resetColumnWidths": "恢复默认列宽",
     "dragToSort": "拖动排序",
     "webOnlyActions": "Web 专属操作",
     "count": "{count} 个节点",

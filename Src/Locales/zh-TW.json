@@ -259,8 +259,6 @@
     "customExport": "自訂匯出",
     "autoFitColumns": "自動調整欄寬",
     "columnSettings": "欄位設定",
-    "resizeColumn": "調整欄寬",
-    "resetColumnWidths": "恢復預設欄寬",
     "dragToSort": "拖曳排序",
     "webOnlyActions": "Web 專屬操作",
     "group": "訂閱群組",

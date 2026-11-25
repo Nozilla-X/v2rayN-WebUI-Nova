@@ -259,8 +259,6 @@
     "customExport": "Custom export",
     "autoFitColumns": "Automatically adjust column widths",
     "columnSettings": "Column settings",
-    "resizeColumn": "Resize column",
-    "resetColumnWidths": "Reset column widths",
     "dragToSort": "Drag to reorder",
     "webOnlyActions": "Web-only actions",
     "group": "Subscription group",
