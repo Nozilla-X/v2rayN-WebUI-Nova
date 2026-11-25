@@ -27,6 +27,18 @@ const isCustomConfig = computed(() => ['Custom', 'Outbound'].includes(protocol.v
 const singboxOnly = computed<string[]>(() => state.editorOptions.singboxOnlyConfigTypes || [])
 const supportsTransport = computed(() => !isCustomConfig.value
   && !['Hysteria2', 'TUIC', 'WireGuard', 'Anytls', 'Naive', 'MASQUE'].includes(protocol.value))
+// WARP keys are only emitted by the Xray MASQUE config generator. Resolve the
+// core the profile will actually run on: an explicit selection wins, otherwise
+// the global config-type mapping (e.g. MASQUE -> Xray), then the default core.
+const effectiveCoreType = computed(() => {
+  const selected = String(form.value.coreType || '')
+  if (selected) return selected
+  const mapped = app.state.profileCoreTypeMappings.value
+    .find((mapping: Record<string, any>) => String(mapping.configType).toLowerCase() === protocol.value.toLowerCase())?.coreType
+  return mapped || state.editorOptions.coreTypes?.[0] || ''
+})
+const showMasqueWarp = computed(() => protocol.value === 'MASQUE'
+  && String(effectiveCoreType.value).toLowerCase() === 'xray')
 
 const streamSecurityOptions = computed(() => optionValues(
   (state.editorOptions.streamSecurityTypes || []).filter((security: string) =>
@@ -118,7 +130,7 @@ function close() {
         </fieldset>
 
         <template v-if="!isCustomConfig">
-          <ProfileAuthSection :form="form" :options="state.editorOptions" :shadowsocks-methods="shadowsocksMethods" />
+          <ProfileAuthSection :form="form" :options="state.editorOptions" :shadowsocks-methods="shadowsocksMethods" :show-warp="showMasqueWarp" />
           <ProfileTransportSection v-if="supportsTransport" :form="form" :editor-options="state.editorOptions" />
           <ProfileSecuritySection
             v-if="protocol !== 'WireGuard'"

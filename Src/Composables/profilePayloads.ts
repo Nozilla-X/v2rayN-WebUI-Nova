@@ -5,7 +5,7 @@ const nullableTextFields = [
   'ports', 'flow', 'vlessEncryption', 'ssMethod', 'wgPublicKey', 'wgPresharedKey',
   'wgInterfaceAddress', 'wgReserved', 'wgDns', 'salamanderPass', 'hopInterval',
   'hy2RealmUrl', 'congestionControl', 'groupType', 'childItems', 'subChildItems',
-  'filter',
+  'filter', 'masquePath', 'masqueHeaders', 'warpPublicKey', 'warpPrivateKey', 'warpAddress',
 ]
 
 /**
@@ -31,6 +31,8 @@ export function multipleLoadEnum(value: unknown): number {
 const nullableTransportTextFields = [
   'rawHeaderType', 'host', 'path', 'xhttpMode', 'xhttpExtra', 'grpcAuthority',
   'grpcServiceName', 'grpcMode', 'kcpHeaderType', 'kcpSeed',
+  'xdriveService', 'xdriveRemoteFolder', 'xdriveSecrets', 'xdriveS3Endpoint',
+  'xdriveS3Region', 'xdriveS3Bucket', 'xdriveExtra',
 ]
 
 // Canonical camelCase names from the Web API contract. The backend stores
@@ -43,13 +45,16 @@ const protocolExtraKeys = [
   'vlessEncryption', 'ssMethod', 'wgPublicKey', 'wgPresharedKey', 'wgInterfaceAddress',
   'wgReserved', 'wgMtu', 'wgDns', 'salamanderPass', 'upMbps', 'downMbps', 'ports',
   'hopInterval', 'hy2RealmUrl', 'geckoMinPacketSize', 'geckoMaxPacketSize',
-  'insecureConcurrency', 'naiveQuic', 'masquePath', 'masqueHeaders', 'groupType',
+  'insecureConcurrency', 'naiveQuic', 'masquePath', 'masqueHeaders',
+  'warpPublicKey', 'warpPrivateKey', 'warpAddress', 'groupType',
   'childItems', 'subChildItems', 'filter', 'multipleLoad', 'isSingboxEndpoint',
 ] as const
 
 const transportExtraKeys = [
   'rawHeaderType', 'host', 'path', 'xhttpMode', 'xhttpExtra', 'grpcAuthority',
   'grpcServiceName', 'grpcMode', 'kcpHeaderType', 'kcpSeed', 'kcpMtu',
+  'xdriveService', 'xdriveRemoteFolder', 'xdriveSecrets', 'xdriveS3Endpoint',
+  'xdriveS3Region', 'xdriveS3Bucket', 'xdriveS3PathStyle', 'xdriveExtra',
 ] as const
 
 type ProfileExtraKind = 'protocol' | 'transport'

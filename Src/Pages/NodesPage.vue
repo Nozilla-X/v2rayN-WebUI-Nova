@@ -9,8 +9,13 @@ import ActionMenu, { type ActionMenuItem } from '../Components/Material/ActionMe
 import ColumnSettingsDialog from '../Components/Material/ColumnSettingsDialog.vue'
 import { useNovaApp } from '../App/context'
 import { useMediaQuery } from '../UI/useMediaQuery'
-import { createColumnVisibility } from '../UI/columnPreferences'
-import { NODE_COLUMNS, NODE_COLUMN_STORAGE_KEY } from '../Features/Nodes/nodeColumns'
+import { createColumnVisibility, createColumnWidths } from '../UI/columnPreferences'
+import {
+  NODE_COLUMNS,
+  NODE_COLUMN_DEFAULT_WIDTHS,
+  NODE_COLUMN_STORAGE_KEY,
+  NODE_COLUMN_WIDTH_STORAGE_KEY,
+} from '../Features/Nodes/nodeColumns'
 
 const { t } = useI18n()
 const app = useNovaApp()
@@ -24,6 +29,14 @@ const {
   visibleIds: nodeVisibleColumns,
   setVisible: setNodeVisibleColumns,
 } = createColumnVisibility(NODE_COLUMNS, NODE_COLUMN_STORAGE_KEY)
+const {
+  widthOf: nodeColumnWidth,
+  setWidth: setNodeColumnWidth,
+  reset: resetNodeColumnWidths,
+} = createColumnWidths(NODE_COLUMN_DEFAULT_WIDTHS, NODE_COLUMN_WIDTH_STORAGE_KEY)
+const nodeColumnWidths = computed(() => Object.fromEntries(
+  Object.keys(NODE_COLUMN_DEFAULT_WIDTHS).map((id) => [id, nodeColumnWidth(id)]),
+))
 const nodeColumnOptions = computed(() => NODE_COLUMNS.map((column) => ({
   id: column.id,
   label: t(column.labelKey),
@@ -104,7 +117,11 @@ function bulkAction(id: string) {
 
     <div class="desktop-only">
       <div class="nodes-group-view" :class="{ 'is-group-entering': groupSwitching }">
-        <NodesTable :visible-columns="nodeVisibleColumns" />
+        <NodesTable
+          :visible-columns="nodeVisibleColumns"
+          :column-widths="nodeColumnWidths"
+          @resize-column="setNodeColumnWidth"
+        />
       </div>
     </div>
     <div class="mobile-only">
@@ -129,7 +146,9 @@ function bulkAction(id: string) {
       :title="t('nodes.columnSettings')"
       :columns="nodeColumnOptions"
       :model-value="nodeVisibleColumns"
+      allow-width-reset
       @update:model-value="setNodeVisibleColumns"
+      @reset-widths="resetNodeColumnWidths"
       @close="showColumnSettings = false"
     />
   </section>

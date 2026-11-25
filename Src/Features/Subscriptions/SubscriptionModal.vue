@@ -13,6 +13,7 @@ const state = app.subscriptions.subscriptionModalState
 const actions = app.subscriptions.subscriptionModalActions
 const form = computed(() => state.subscriptionForm)
 const datalistId = `subscription-profiles-${useId()}`
+const preResolverListId = `subscription-pre-resolvers-${useId()}`
 
 const selectableProfiles = computed(() => state.profileOptions.filter((profile: Record<string, any>) =>
   String(profile.protocol || '').toLowerCase() !== 'custom' && String(profile.remarks || '').trim(),
@@ -25,6 +26,10 @@ function close() {
 
 function toggleEnabled() {
   form.value.enabled = !form.value.enabled
+}
+
+function selectPreResolver(value: string | number | null) {
+  form.value.preResolver = String(value ?? '')
 }
 </script>
 
@@ -126,6 +131,28 @@ function toggleEnabled() {
             <span class="field-label">{{ t('subscriptions.preSocksPort') }}</span>
             <input v-model.number="form.preSocksPort" type="number" min="0" max="65535" step="1" />
           </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend class="section-title"><h3>{{ t('subscriptions.preResolver') }}</h3></legend>
+        <div class="field-row">
+          <label class="field field-wide">
+            <span class="field-label">{{ t('subscriptions.preResolverAddress') }}</span>
+            <input v-model="form.preResolver" :list="preResolverListId" autocomplete="off" />
+            <small class="field-hint">{{ t('subscriptions.preResolverTip') }}</small>
+          </label>
+          <UiSelect :label="t('subscriptions.preResolverPreset')" :model-value="form.preResolver || ''" @update:model-value="selectPreResolver">
+            <option value="">{{ t('common.none') }}</option>
+            <option
+              v-if="form.preResolver && !state.preResolveAddresses.includes(form.preResolver)"
+              :value="form.preResolver"
+            >{{ form.preResolver }}</option>
+            <option v-for="address in state.preResolveAddresses" :key="address" :value="address">{{ address }}</option>
+          </UiSelect>
+          <datalist :id="preResolverListId">
+            <option v-for="address in state.preResolveAddresses" :key="address" :value="address" />
+          </datalist>
         </div>
       </fieldset>
 

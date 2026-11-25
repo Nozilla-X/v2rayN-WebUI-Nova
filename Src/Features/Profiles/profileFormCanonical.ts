@@ -12,6 +12,7 @@ const protocolExtraOwners: Record<string, string[]> = {
   wgReserved: ['WireGuard'], wgMtu: ['WireGuard'], wgDns: ['WireGuard'],
   isSingboxEndpoint: ['Outbound'],
   masquePath: ['MASQUE'], masqueHeaders: ['MASQUE'],
+  warpPublicKey: ['MASQUE'], warpPrivateKey: ['MASQUE'], warpAddress: ['MASQUE'],
   salamanderPass: ['Hysteria2'], upMbps: ['Hysteria2'], downMbps: ['Hysteria2'], ports: ['Hysteria2'],
   hopInterval: ['Hysteria2'], hy2RealmUrl: ['Hysteria2'], geckoMinPacketSize: ['Hysteria2'], geckoMaxPacketSize: ['Hysteria2'],
   congestionControl: ['TUIC', 'Naive'], insecureConcurrency: ['Anytls', 'Naive'], naiveQuic: ['Naive'],

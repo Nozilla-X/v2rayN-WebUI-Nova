@@ -21,6 +21,7 @@ export function useSubscriptions(options: ApiServices & {
   const profileOptions = ref<Dict[]>([])
   const coreTypes = ref<string[]>([])
   const convertTargets = ref<string[]>([])
+  const preResolveAddresses = ref<string[]>([])
   const showSubscriptionForm = ref(false)
   const editingSubscriptionId = ref('')
   let subscriptionsLoadSequence = 0
@@ -35,6 +36,7 @@ export function useSubscriptions(options: ApiServices & {
     const result = await options.data('/api/editor-options')
     coreTypes.value = result?.subscriptions?.customCoreTypes || []
     convertTargets.value = result?.subscriptions?.convertTargets || []
+    preResolveAddresses.value = result?.subscriptions?.preResolveAddresses || []
   }
 
   function subscriptionUpdateMessageKey(subscriptionId: string | null, useProxy: boolean): string {
@@ -52,6 +54,7 @@ export function useSubscriptions(options: ApiServices & {
     subscriptionForm.value = {
       remarks: '', url: '', moreUrl: '', enabled: true, userAgent: '', requestHeaders: '', filter: '',
       autoUpdateInterval: 0, convertTarget: '', memo: '', sort: 0, prevProfile: '', nextProfile: '', preSocksPort: null, customCoreType: null,
+      preResolver: '',
     }
     showSubscriptionForm.value = true
   }
@@ -65,6 +68,7 @@ export function useSubscriptions(options: ApiServices & {
       ...item,
       customCoreType: item.customCoreType ?? null,
       convertTarget: item.convertTarget ?? '',
+      preResolver: item.preResolver ?? '',
     }
     showSubscriptionForm.value = true
   }
@@ -172,12 +176,13 @@ export function useSubscriptions(options: ApiServices & {
     profileOptions.value = []
     coreTypes.value = []
     convertTargets.value = []
+    preResolveAddresses.value = []
     showSubscriptionForm.value = false
     editingSubscriptionId.value = ''
   }
 
   const subscriptionsPageState = reactive({ subscriptions, subscriptionUseProxy, selectedGroup: options.selectedGroup })
-  const subscriptionModalState = reactive({ showSubscriptionForm, subscriptionForm, editingSubscriptionId, coreTypes, convertTargets, profileOptions })
+  const subscriptionModalState = reactive({ showSubscriptionForm, subscriptionForm, editingSubscriptionId, coreTypes, convertTargets, preResolveAddresses, profileOptions })
 
   return {
     subscriptions, subscriptionUseProxy, showSubscriptionForm, loadSubscriptions, loadEditorOptions, subscriptionsPageState, subscriptionModalState,

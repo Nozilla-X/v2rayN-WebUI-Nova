@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UiButton from '../../Components/Material/UiButton.vue'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiCheckbox from '../../Components/Material/UiCheckbox.vue'
 import UiIcon from '../../Components/Material/UiIcon.vue'
@@ -10,7 +10,8 @@ import type { Dict } from '../../Composables/types'
 import { vScrollShadow } from '../../UI/scrollShadow'
 import { useTableDragSort } from '../../UI/tableDragSort'
 
-const props = defineProps<{ visibleColumns: readonly string[] }>()
+const props = defineProps<{ visibleColumns: readonly string[]; columnWidths: Record<string, number> }>()
+const emit = defineEmits<{ 'resize-column': [id: string, width: number] }>()
 const { t } = useI18n()
 const app = useNovaApp()
 const state = app.nodes.nodesPageState
@@ -19,7 +20,8 @@ const actions = app.nodes.nodesPageActions
 const visible = computed(() => new Set(props.visibleColumns))
 const showIp = computed(() => Boolean(state.showIpInfoColumn))
 const dataColumnIds = ['type', 'address', 'port', 'network', 'streamSecurity', 'group', 'delay', 'speed', 'todayUp', 'todayDown', 'totalUp', 'totalDown']
-const columnWidths: Record<string, number> = {
+// Fallbacks mirror NODE_COLUMN_DEFAULT_WIDTHS; the parent owns persistence.
+const defaultWidths: Record<string, number> = {
   type: 100,
   remarks: 220,
   address: 220,
@@ -35,10 +37,67 @@ const columnWidths: Record<string, number> = {
   totalUp: 110,
   totalDown: 110,
 }
+const RESIZE_MIN = 64
+const RESIZE_MAX = 720
+const resizing = ref<{ id: string; startX: number; startWidth: number } | null>(null)
+const liveWidths = ref<Record<string, number>>({})
+const isResizing = computed(() => resizing.value !== null)
+
+function widthOf(id: string): number {
+  return liveWidths.value[id] ?? props.columnWidths[id] ?? defaultWidths[id] ?? RESIZE_MIN
+}
+
+function columnStyle(id: string) {
+  const width = widthOf(id)
+  return { width: `${width}px`, minWidth: `${width}px` }
+}
+
+function clampWidth(width: number): number {
+  return Math.min(RESIZE_MAX, Math.max(RESIZE_MIN, Math.round(width)))
+}
+
+function onColumnResize(event: PointerEvent) {
+  const current = resizing.value
+  if (!current) return
+  liveWidths.value = { ...liveWidths.value, [current.id]: clampWidth(current.startWidth + event.clientX - current.startX) }
+}
+
+function stopColumnResize() {
+  window.removeEventListener('pointermove', onColumnResize)
+  window.removeEventListener('pointerup', endColumnResize)
+  window.removeEventListener('pointercancel', endColumnResize)
+}
+
+function endColumnResize() {
+  const current = resizing.value
+  resizing.value = null
+  stopColumnResize()
+  const width = current ? liveWidths.value[current.id] : undefined
+  liveWidths.value = {}
+  if (current && width !== undefined) emit('resize-column', current.id, width)
+}
+
+function beginColumnResize(event: PointerEvent, id: string) {
+  if (event.button !== 0) return
+  event.preventDefault()
+  event.stopPropagation()
+  stopColumnResize()
+  resizing.value = { id, startX: event.clientX, startWidth: widthOf(id) }
+  window.addEventListener('pointermove', onColumnResize)
+  window.addEventListener('pointerup', endColumnResize, { once: true })
+  window.addEventListener('pointercancel', endColumnResize, { once: true })
+}
+
+function nudgeColumnWidth(id: string, delta: number) {
+  emit('resize-column', id, clampWidth(widthOf(id) + delta))
+}
+
+onBeforeUnmount(stopColumnResize)
+
 const colSpan = computed(() => 4 + dataColumnIds.filter((id) => isVisible(id)).length + (showIp.value ? 1 : 0))
-const minTableWidth = computed(() => 44 + 44 + 88 + columnWidths.remarks
-  + dataColumnIds.filter((id) => isVisible(id)).reduce((width, id) => width + columnWidths[id], 0)
-  + (showIp.value ? columnWidths.ip : 0))
+const minTableWidth = computed(() => 56 + 44 + 88 + widthOf('remarks')
+  + dataColumnIds.filter((id) => isVisible(id)).reduce((width, id) => width + widthOf(id), 0)
+  + (showIp.value ? widthOf('ip') : 0))
 const selectionIndeterminate = computed(() => state.selectedIds.length > 0 && !state.allVisibleSelected)
 const tableShell = ref<HTMLElement | null>(null)
 const dragSort = useTableDragSort({
@@ -86,8 +145,27 @@ function preventRangeTextSelection(event: MouseEvent) {
 </script>
 
 <template>
-  <div ref="tableShell" v-scroll-shadow class="table-shell nodes-table-shell" tabindex="0" :aria-label="t('nodes.title')">
+  <div ref="tableShell" v-scroll-shadow class="table-shell nodes-table-shell" tabindex="0" :aria-label="t('nodes.title')" :class="{ 'is-resizing': isResizing }">
     <table class="data-table profile-table" :style="{ minWidth: `${minTableWidth}px` }">
+      <colgroup>
+        <col style="width: 56px" />
+        <col style="width: 44px" />
+        <col v-if="isVisible('type')" :style="{ width: `${widthOf('type')}px` }" />
+        <col :style="{ width: `${widthOf('remarks')}px` }" />
+        <col v-if="isVisible('address')" :style="{ width: `${widthOf('address')}px` }" />
+        <col v-if="isVisible('port')" :style="{ width: `${widthOf('port')}px` }" />
+        <col v-if="isVisible('network')" :style="{ width: `${widthOf('network')}px` }" />
+        <col v-if="isVisible('streamSecurity')" :style="{ width: `${widthOf('streamSecurity')}px` }" />
+        <col v-if="isVisible('group')" :style="{ width: `${widthOf('group')}px` }" />
+        <col v-if="isVisible('delay')" :style="{ width: `${widthOf('delay')}px` }" />
+        <col v-if="isVisible('speed')" :style="{ width: `${widthOf('speed')}px` }" />
+        <col v-if="showIp" :style="{ width: `${widthOf('ip')}px` }" />
+        <col v-if="isVisible('todayUp')" :style="{ width: `${widthOf('todayUp')}px` }" />
+        <col v-if="isVisible('todayDown')" :style="{ width: `${widthOf('todayDown')}px` }" />
+        <col v-if="isVisible('totalUp')" :style="{ width: `${widthOf('totalUp')}px` }" />
+        <col v-if="isVisible('totalDown')" :style="{ width: `${widthOf('totalDown')}px` }" />
+        <col style="width: 88px" />
+      </colgroup>
       <thead>
         <tr>
           <th class="cell-check">
@@ -110,52 +188,192 @@ function preventRangeTextSelection(event: MouseEvent) {
             <button type="button" class="sort-button" @click="actions.sortProfiles('ConfigType')">
               {{ t('nodes.type') }}<UiIcon v-if="sortState('ConfigType') !== 'none'" :name="sortState('ConfigType') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
+          <span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'type')"
+              @keydown.left.prevent="nudgeColumnWidth('type', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('type', 16)"
+            />
           </th>
           <th :aria-sort="sortState('Remarks')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('Remarks')">
               {{ t('nodes.remarks') }}<UiIcon v-if="sortState('Remarks') !== 'none'" :name="sortState('Remarks') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
+          <span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'remarks')"
+              @keydown.left.prevent="nudgeColumnWidth('remarks', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('remarks', 16)"
+            />
           </th>
           <th v-if="isVisible('address')" :aria-sort="sortState('Address')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('Address')">
               {{ t('nodes.address') }}<UiIcon v-if="sortState('Address') !== 'none'" :name="sortState('Address') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
+          <span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'address')"
+              @keydown.left.prevent="nudgeColumnWidth('address', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('address', 16)"
+            />
           </th>
           <th v-if="isVisible('port')" class="cell-number" :aria-sort="sortState('Port')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('Port')">
               {{ t('nodes.port') }}<UiIcon v-if="sortState('Port') !== 'none'" :name="sortState('Port') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
+          <span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'port')"
+              @keydown.left.prevent="nudgeColumnWidth('port', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('port', 16)"
+            />
           </th>
           <th v-if="isVisible('network')" :aria-sort="sortState('Network')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('Network')">
               {{ t('nodes.network') }}<UiIcon v-if="sortState('Network') !== 'none'" :name="sortState('Network') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
+          <span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'network')"
+              @keydown.left.prevent="nudgeColumnWidth('network', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('network', 16)"
+            />
           </th>
           <th v-if="isVisible('streamSecurity')" :aria-sort="sortState('StreamSecurity')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('StreamSecurity')">
               {{ t('nodes.tls') }}<UiIcon v-if="sortState('StreamSecurity') !== 'none'" :name="sortState('StreamSecurity') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
+          <span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'streamSecurity')"
+              @keydown.left.prevent="nudgeColumnWidth('streamSecurity', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('streamSecurity', 16)"
+            />
           </th>
           <th v-if="isVisible('group')" :aria-sort="sortState('SubRemarks')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('SubRemarks')">
               {{ t('nodes.groupColumn') }}<UiIcon v-if="sortState('SubRemarks') !== 'none'" :name="sortState('SubRemarks') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
+          <span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'group')"
+              @keydown.left.prevent="nudgeColumnWidth('group', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('group', 16)"
+            />
           </th>
           <th v-if="isVisible('delay')" class="cell-number cell-delay" :aria-sort="sortState('DelayVal')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('DelayVal')">
               {{ t('nodes.delay') }}<UiIcon v-if="sortState('DelayVal') !== 'none'" :name="sortState('DelayVal') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
+          <span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'delay')"
+              @keydown.left.prevent="nudgeColumnWidth('delay', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('delay', 16)"
+            />
           </th>
           <th v-if="isVisible('speed')" class="cell-number cell-speed" :aria-sort="sortState('SpeedVal')">
             <button type="button" class="sort-button" @click="actions.sortProfiles('SpeedVal')">
               {{ t('nodes.speed') }}<UiIcon v-if="sortState('SpeedVal') !== 'none'" :name="sortState('SpeedVal') === 'ascending' ? 'chevron-up' : 'chevron-down'" :size="12" />
             </button>
+          <span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'speed')"
+              @keydown.left.prevent="nudgeColumnWidth('speed', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('speed', 16)"
+            />
           </th>
-          <th v-if="showIp">{{ t('nodes.ip') }}</th>
-          <th v-if="isVisible('todayUp')" class="cell-number">{{ t('nodes.todayUp') }}</th>
-          <th v-if="isVisible('todayDown')" class="cell-number">{{ t('nodes.todayDown') }}</th>
-          <th v-if="isVisible('totalUp')" class="cell-number">{{ t('nodes.totalUp') }}</th>
-          <th v-if="isVisible('totalDown')" class="cell-number">{{ t('nodes.totalDown') }}</th>
+          <th v-if="showIp">{{ t('nodes.ip') }}<span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'ip')"
+              @keydown.left.prevent="nudgeColumnWidth('ip', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('ip', 16)"
+            />
+          </th>
+          <th v-if="isVisible('todayUp')" class="cell-number">{{ t('nodes.todayUp') }}<span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'todayUp')"
+              @keydown.left.prevent="nudgeColumnWidth('todayUp', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('todayUp', 16)"
+            />
+          </th>
+          <th v-if="isVisible('todayDown')" class="cell-number">{{ t('nodes.todayDown') }}<span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'todayDown')"
+              @keydown.left.prevent="nudgeColumnWidth('todayDown', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('todayDown', 16)"
+            />
+          </th>
+          <th v-if="isVisible('totalUp')" class="cell-number">{{ t('nodes.totalUp') }}<span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'totalUp')"
+              @keydown.left.prevent="nudgeColumnWidth('totalUp', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('totalUp', 16)"
+            />
+          </th>
+          <th v-if="isVisible('totalDown')" class="cell-number">{{ t('nodes.totalDown') }}<span
+              class="col-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              :aria-label="t('nodes.resizeColumn')"
+              tabindex="0"
+              @pointerdown="beginColumnResize($event, 'totalDown')"
+              @keydown.left.prevent="nudgeColumnWidth('totalDown', -16)"
+              @keydown.right.prevent="nudgeColumnWidth('totalDown', 16)"
+            />
+          </th>
           <th class="cell-actions">{{ t('nodes.actions') }}</th>
         </tr>
       </thead>
@@ -275,6 +493,55 @@ function preventRangeTextSelection(event: MouseEvent) {
 </template>
 
 <style scoped>
+.profile-table {
+  /* Header widths come from the colgroup so a resized column is honoured
+     exactly; the table still fills a wider viewport. */
+  table-layout: fixed;
+}
+
+.profile-table td {
+  overflow: hidden;
+}
+
+.col-resizer {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  bottom: 0;
+  inset-inline-end: 0;
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.col-resizer::after {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  inset-inline-start: 2px;
+  width: 1px;
+  background: var(--md-sys-color-outline);
+  content: '';
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.profile-table th:hover .col-resizer::after,
+.col-resizer:focus-visible::after {
+  opacity: 1;
+}
+
+.col-resizer:focus-visible {
+  outline: var(--nova-focus-ring);
+  outline-offset: -2px;
+}
+
+.nodes-table-shell.is-resizing,
+.nodes-table-shell.is-resizing * {
+  cursor: col-resize;
+  user-select: none;
+}
+
 .nodes-table-shell {
   /*
    * Track the window height instead of capping at a fixed 820px. The 268px

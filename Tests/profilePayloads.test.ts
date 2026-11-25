@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { mergeFormEdits, multipleLoadEnum, multipleLoadName, reconcileProfileExtraKeys } from '../Src/Composables/profilePayloads.ts'
+import { mergeFormEdits, multipleLoadEnum, multipleLoadName, normalizeProfileProtocolExtra, normalizeProfileTransportExtra, reconcileProfileExtraKeys } from '../Src/Composables/profilePayloads.ts'
 
 test('multiple load strategies use numeric ServiceLib enum values in protoExtra', () => {
   // ServiceLib deserializes ProtocolExtraItem with System.Text.Json's default
@@ -134,4 +134,36 @@ test('canonical camelCase is emitted for a profile that only has PascalCase keys
     reconcileProfileExtraKeys(raw, 'protocol', { advanced: raw, current: raw, initial: raw }),
     { flow: 'xtls-rprx-vision', vlessEncryption: 'mlkem768x25519plus.native.0rtt.seed' },
   )
+})
+
+test('empty MASQUE and WARP fields normalize to null', () => {
+  assert.deepEqual(
+    normalizeProfileProtocolExtra({ masquePath: '', masqueHeaders: '', warpPrivateKey: '', warpAddress: '172.16.0.2/32' }, 'MASQUE'),
+    { masquePath: null, masqueHeaders: null, warpPrivateKey: null, warpAddress: '172.16.0.2/32' },
+  )
+})
+
+test('XDRIVE fields keep the S3 path-style boolean and null empty text', () => {
+  assert.deepEqual(
+    normalizeProfileTransportExtra({
+      xdriveService: 's3',
+      xdriveRemoteFolder: '',
+      xdriveS3Region: '',
+      xdriveExtra: '',
+      xdriveS3PathStyle: true,
+    }),
+    {
+      xdriveService: 's3',
+      xdriveRemoteFolder: null,
+      xdriveS3Region: null,
+      xdriveExtra: null,
+      xdriveS3PathStyle: true,
+    },
+  )
+  const merged = reconcileProfileExtraKeys(
+    { XdriveS3PathStyle: true, xdriveS3PathStyle: false },
+    'transport',
+    { advanced: {}, current: {}, initial: {} },
+  )
+  assert.deepEqual(merged, { xdriveS3PathStyle: true })
 })

@@ -539,6 +539,7 @@ interface SubscriptionInput {
   nextProfile?: string | null
   preSocksPort?: number | null
   customCoreType?: string | null
+  preResolver?: string | null   // DoH/DoT URL or IP used before resolving node domains
 }
 
 interface SubscriptionView {
@@ -559,11 +560,14 @@ interface SubscriptionView {
   nextProfile: string | null
   preSocksPort: number | null
   customCoreType: string | null
+  preResolver: string | null
 }
 ```
 
-On update, omitted optional fields preserve the stored value. `updateTime` is maintained by the
-backend and is not accepted in `SubscriptionInput`.
+On update, omitted optional fields preserve the stored value; an explicit empty `preResolver`
+clears it. `updateTime` is maintained by the backend and is not accepted in `SubscriptionInput`.
+`preResolver` is passed to the ServiceLib domain pre-resolution path when the subscription is
+refreshed.
 
 ### 4.4 Profile views
 
@@ -663,7 +667,10 @@ interface ProtocolExtraItem {
   insecureConcurrency?: number
   naiveQuic?: boolean
   masquePath?: string
-  masqueHeaders?: string
+  masqueHeaders?: string        // one "Header: Value" per line
+  warpPublicKey?: string
+  warpPrivateKey?: string
+  warpAddress?: string          // comma-separated local IPv4/IPv6 addresses
   groupType?: string
   childItems?: string
   subChildItems?: string
@@ -688,8 +695,19 @@ interface TransportExtraItem {
   kcpHeaderType?: string
   kcpSeed?: string
   kcpMtu?: number
+  xdriveService?: string
+  xdriveRemoteFolder?: string
+  xdriveSecrets?: string        // comma-separated secrets
+  xdriveS3Endpoint?: string
+  xdriveS3Region?: string
+  xdriveS3Bucket?: string
+  xdriveS3PathStyle?: boolean
+  xdriveExtra?: string          // raw JSON object
 }
 ```
+
+For an `Outbound` profile the config file at `address` accepts either a single outbound object or
+an array of outbound objects; arrays are emitted in order and contribute their tags verbatim.
 
 Top-level legacy fields such as `headerType`, `requestHost`, `path`, `extra`, `ports`, `alterId`,
 `flow`, `id` and `security` are obsolete. New clients must read and write
@@ -1073,6 +1091,7 @@ interface WebEditorOptionsView {
   subscriptions: {
     convertTargets: string[]
     customCoreTypes: string[]
+    preResolveAddresses: string[]
   }
   profiles: {
     coreTypes: string[]
@@ -1099,6 +1118,8 @@ interface WebEditorOptionsView {
     shadowsocksSecurities: Record<string, string[]>
     streamSecurityTypes: string[]
     multipleLoadStrategies: string[]
+    xdriveProviders: string[]
+    xdriveServices: string[]
   }
   dns: DnsEditorOptionsView
 }

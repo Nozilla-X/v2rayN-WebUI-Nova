@@ -31,6 +31,10 @@ const coreOptions = computed(() => optionValues(
 ))
 const coreLocked = computed(() => props.singboxOnly.includes(protocol.value))
 const addressLabel = computed(() => t(props.isCustom ? 'nodes.customConfigPath' : 'nodes.address'))
+const addressPlaceholder = computed(() => {
+  if (!props.isCustom) return undefined
+  return t(protocol.value === 'Outbound' ? 'nodes.customOutboundPathHint' : 'nodes.customConfigPathHint')
+})
 </script>
 
 <template>
@@ -61,7 +65,7 @@ const addressLabel = computed(() => t(props.isCustom ? 'nodes.customConfigPath' 
             v-model="form.address"
             required
             autocomplete="off"
-            :placeholder="isCustom ? t('nodes.customConfigPathHint') : undefined"
+            :placeholder="addressPlaceholder"
           />
         </label>
         <label v-if="!isCustom" class="field">

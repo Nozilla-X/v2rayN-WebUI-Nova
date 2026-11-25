@@ -9,10 +9,11 @@ const props = defineProps<{
   form: Record<string, any>
   options: Record<string, any>
   shadowsocksMethods: readonly string[]
+  showWarp?: boolean
 }>()
 const { t } = useI18n()
 const protocol = computed(() => String(props.form.configType || ''))
-const isPasswordProtocol = computed(() => !['HTTP', 'SOCKS', 'Naive', 'WireGuard'].includes(protocol.value))
+const isPasswordProtocol = computed(() => !['HTTP', 'SOCKS', 'Naive', 'WireGuard', 'MASQUE'].includes(protocol.value))
 const passwordRequired = computed(() => ['VMess', 'VLESS', 'Shadowsocks', 'Trojan', 'Hysteria2', 'TUIC', 'Anytls'].includes(protocol.value))
 const muxSupported = computed(() => ['VMess', 'VLESS', 'Shadowsocks', 'Trojan'].includes(protocol.value))
 const authUserLabel = computed(() => protocol.value === 'VMess' || protocol.value === 'VLESS' ? 'nodes.uuid' : 'nodes.password')
@@ -26,7 +27,7 @@ const authUserLabel = computed(() => protocol.value === 'VMess' || protocol.valu
         <span class="field-label">{{ t(authUserLabel) }}</span>
         <input v-model="form.password" :required="passwordRequired" autocomplete="off" />
       </label>
-      <label v-if="['HTTP', 'SOCKS', 'Naive'].includes(protocol)" class="field">
+      <label v-if="['HTTP', 'SOCKS', 'Naive', 'MASQUE'].includes(protocol)" class="field">
         <span class="field-label">{{ t('nodes.username') }}</span>
         <input v-model="form.username" autocomplete="off" />
       </label>
@@ -34,10 +35,40 @@ const authUserLabel = computed(() => protocol.value === 'VMess' || protocol.valu
         <span class="field-label">{{ t('nodes.uuid') }}</span>
         <input v-model="form.username" required autocomplete="off" />
       </label>
-      <label v-if="['HTTP', 'SOCKS', 'Naive'].includes(protocol)" class="field">
+      <label v-if="['HTTP', 'SOCKS', 'Naive', 'MASQUE'].includes(protocol)" class="field">
         <span class="field-label">{{ t('nodes.password') }}</span>
         <input v-model="form.password" :required="protocol === 'Naive'" autocomplete="off" />
       </label>
+
+      <template v-if="protocol === 'MASQUE'">
+        <label class="field">
+          <span class="field-label">{{ t('nodes.masquePath') }}</span>
+          <input v-model="form.protoExtra.masquePath" autocomplete="off" />
+        </label>
+        <label class="field field-wide">
+          <span class="field-label">{{ t('nodes.masqueHeaders') }}</span>
+          <textarea v-model="form.protoExtra.masqueHeaders" class="code-area" rows="3" spellcheck="false" placeholder="Header: Value" />
+          <small class="field-hint">{{ t('nodes.masqueHeadersHint') }}</small>
+        </label>
+        <details v-if="showWarp" class="warp-settings">
+          <summary>{{ t('nodes.warpSettings') }}</summary>
+          <div class="field-row warp-fields">
+            <p class="field-hint warp-hint">{{ t('nodes.warpHint') }}</p>
+            <label class="field">
+              <span class="field-label">{{ t('nodes.warpPrivateKey') }}</span>
+              <input v-model="form.protoExtra.warpPrivateKey" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span class="field-label">{{ t('nodes.warpPublicKey') }}</span>
+              <input v-model="form.protoExtra.warpPublicKey" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span class="field-label">{{ t('nodes.warpAddress') }}</span>
+              <input v-model="form.protoExtra.warpAddress" autocomplete="off" placeholder="IPv4/32, IPv6/128" />
+            </label>
+          </div>
+        </details>
+      </template>
 
       <label v-if="protocol === 'VMess'" class="field">
         <span class="field-label">{{ t('nodes.alterId') }}</span>
@@ -130,6 +161,31 @@ const authUserLabel = computed(() => protocol.value === 'VMess' || protocol.valu
 .auth-section {
   display: grid;
   gap: var(--nova-space-3);
+}
+
+.warp-settings {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: var(--nova-space-3) var(--nova-space-4);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.warp-settings summary {
+  cursor: pointer;
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-title-small-size);
+  font-weight: var(--md-sys-typescale-weight-medium);
+}
+
+.warp-fields {
+  margin-top: var(--nova-space-3);
+}
+
+.warp-hint {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 @media (max-width: 700px) {
